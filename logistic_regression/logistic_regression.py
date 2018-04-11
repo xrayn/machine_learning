@@ -135,7 +135,7 @@ thetas=get_gradient(X_augment,Y,theta,get_cost_logistic, gradient_descent_logist
 def plot_data_scatterplot(X, y, thetas=[]):
     """Plots data as a scatterplot, with contour lines for thetas.
     X: (k, 2) data items.
-    y: (k, 1) result (+1 or -1) for each data item in X.
+    y: (k, 1) result (+1 or 0) for each data item in X.
     thetas: list of (theta array, label) pairs to plot contours.
     Plots +1 data points as a green x, -1 as red o.
     """
