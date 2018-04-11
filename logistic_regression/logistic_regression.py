@@ -39,7 +39,7 @@ X_normalized=normalize(X)
 X_augment=numpy.concatenate((one, X_normalized), axis=1)
 
 
-def get_cost(X,Y, theta=[0,0]):
+def get_cost_quadratic(X,Y, theta=[0,0]):
 	m=numpy.shape(data)[0]
 	h_x=(numpy.dot(X,theta))
 	# for logistic regression (classification) the logistic function comes in here!
@@ -47,55 +47,44 @@ def get_cost(X,Y, theta=[0,0]):
 	cost=(float(1)/(2*m))*h_x_sum
 	return cost
 
+def logistic_loss(X,theta):
+	"""
+	Calculates the h(x) and cost of gradient descent for logistic regression
 
+	Returns: (h_x) where sigmoid is applied for h_x
+	"""
+	h_x=numpy.dot(X,theta)
+	# we apply sigmoid function here to get a bowl curve for GD
+	h_x=sigmoid(h_x)
+	# this calculates the cost for logistic regression
+	return h_x
 
-def get_cost_logistic(X,Y, theta=[0,0]):
-	m,n=numpy.shape(data)
-	h_t_x=(numpy.dot(X,theta))
-	eps = numpy.finfo(numpy.float32).eps
-	h_x = sigmoid(h_t_x)
-	h_x = numpy.clip(h_x, a_min=eps, a_max=1.0-eps)
-	
-	# for logistic regression (classification) the logistic function comes in here!
-	
+def logistic_cost(X,theta,Y):
+	m,n=X.shape
+	h_x=logistic_loss(X,theta)
 	h_x_sum=numpy.dot(-Y,numpy.log(h_x))-numpy.dot((1.0-Y),numpy.log(1.0-h_x))
-	
-	#h_x_2=numpy.dot((1.0-Y),numpy.log(1.0-h_x))
-	#h_x_sum=numpy.sum(numpy.subtract(h_x_1,h_x_2))
 	cost=(float(1.0)/(m))*h_x_sum
 	return cost
 
-def gradient_descent(X,Y,theta,alpha):
-	cost_old= get_cost(X,Y,theta)
-	h_x=(numpy.dot(X,theta))
-	m=numpy.shape(data)[0]
-	# h(x)-y
-	h_x_substracted=numpy.subtract(h_x,Y)
-	theta= theta-(alpha*(1.0/float(m))*numpy.dot(h_x_substracted,X))
-	#theta= [theta1, theta2]
-	cost= get_cost(X,Y,theta)
-	return (theta, cost, cost_old)
-
-def gradient_descent_logistic(X,Y,theta,alpha):
-	cost_old= get_cost_logistic(X,Y,theta)
-	m=numpy.shape(data)[0]
-	
-	h_t_x=(numpy.dot(X,theta))
-	h_x = sigmoid(h_t_x)
+def logistic_gradient_descent_round(X,Y,theta,alpha):
 	eps = numpy.finfo(numpy.float32).eps
+	m,n=X.shape
+	h_x = logistic_loss(X,theta)
+
+	# need some clipping of values since it might overflow otherwise
 	h_x = numpy.clip(h_x, a_min=eps, a_max=1.0-eps)
-	# h(x)-y
 	
-	h_x_sum=numpy.subtract(h_x,Y)
-	
-	#h_x_sum=numpy.dot(h_x_substracted,X)
-	
-	#theta= [theta1, theta2]
 	h_x_substracted=numpy.subtract(h_x,Y)
+	cost_before=logistic_cost(X,theta,Y)
+	# this is the general form of gradient decent.
+	# thetas are derived on the basis of the used loss function
 	theta= theta-(alpha*(1.0/float(m))*numpy.dot(h_x_substracted,X))
-	cost= get_cost_logistic(X,Y,theta)
-	
-	return (theta, cost, cost_old)
+	cost=logistic_cost(X,theta,Y)
+	return theta, (cost_before-cost)
+
+
+
+
 def graph(formula, x_range):  
     x = numpy.array(x_range)  
     y = formula(x)  # <- note now we're calling the function 'formula' with x
@@ -106,24 +95,24 @@ def graph(formula, x_range):
 theta=numpy.zeros(((numpy.shape(data)[1]-1)))
 theta=[0.0, 0.0, 0.0]
 
-def get_gradient(X,Y,theta, cost_func, descenc_func):
+def gradient_descent(X,Y,theta, lossfunc, rounds=1000):
 	thetas=[]
 	#print get_cost(X,Y, [0,0])
-	for i in range(1,1000):
-		cost=cost_func(X,Y,theta)
-		print cost
+	costs=[]
+	for i in range(1,rounds):
 		#print get_cost_logistic(X,Y,theta)
-		theta, cost, cost_old = descenc_func(X,Y,theta, 1.0)
+		theta,cost = logistic_gradient_descent_round(X,Y,theta,  1.0)
+		costs.append(cost)
 		if i % 100==1:
 			thetas.append((theta, "round"+str(i)))
-			plt.plot(i,cost, "r.")
-			print i, theta, cost
+			plt.plot(i,costs[i-1], "r.")
+			print i, theta, costs[i-1]
 	thetas.append((theta, "round"+str(i)))
 	plt.show()
 	return thetas
 	
 
-thetas=get_gradient(X_augment,Y,theta,get_cost_logistic, gradient_descent_logistic)
+thetas=gradient_descent(X_augment,Y,theta, logistic_loss, 1000)
 
 
 
