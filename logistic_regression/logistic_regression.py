@@ -29,8 +29,20 @@ def split_x_y(data):
 X,Y=split_x_y(data)
 
 def normalize(X):
+	mean=X.mean(axis=0)
+	std=X.std(axis=0)
+	#X=numpy.divide(X,numpy.max(X))
+	X=(X-mean)/std
+	
+	return X
+
+
+def normalize2(X):
 	X=numpy.divide(X,numpy.max(X))
-	X=X-numpy.mean(X)
+	#X=X-numpy.mean(X)
+	
+	x= numpy.linalg.svd(X)
+	
 	return X
 
 X_normalized=normalize(X)
@@ -42,7 +54,7 @@ X_augment=numpy.concatenate((one, X_normalized), axis=1)
 def get_cost_quadratic(X,Y, theta=[0,0]):
 	m=numpy.shape(data)[0]
 	h_x=(numpy.dot(X,theta))
-	# for logistic regression (classification) the logistic function comes in here!
+	
 	h_x_sum=numpy.sum(numpy.subtract(h_x,Y)**2)
 	cost=(float(1)/(2*m))*h_x_sum
 	return cost
@@ -80,7 +92,7 @@ def logistic_gradient_descent_round(X,Y,theta,alpha):
 	# thetas are derived on the basis of the used loss function
 	theta= theta-(alpha*(1.0/float(m))*numpy.dot(h_x_substracted,X))
 	cost=logistic_cost(X,theta,Y)
-	return theta, (cost_before-cost)
+	return theta, cost_before, (cost_before-cost)
 
 
 
@@ -97,22 +109,24 @@ theta=[0.0, 0.0, 0.0]
 
 def gradient_descent(X,Y,theta, lossfunc, rounds=1000):
 	thetas=[]
-	#print get_cost(X,Y, [0,0])
 	costs=[]
+	#theta,cost,costdelta = logistic_gradient_descent_round(X,Y,theta,  0.0)
+	#thetas.append((theta, "start"))
 	for i in range(1,rounds):
-		#print get_cost_logistic(X,Y,theta)
-		theta,cost = logistic_gradient_descent_round(X,Y,theta,  1.0)
+		theta,cost,costdelta = logistic_gradient_descent_round(X,Y,theta,  1.0)
 		costs.append(cost)
-		if i % 100==1:
+		if i % 10==1:
+			
 			thetas.append((theta, "round"+str(i)))
-			plt.plot(i,costs[i-1], "r.")
-			print i, theta, costs[i-1]
-	thetas.append((theta, "round"+str(i)))
+			#plt.plot(i,costs[i-1], "r.")
+			print i, theta, cost, costdelta
+			plt.plot(i,cost, "r.")
+	#thetas.append((theta, "round"+str(i)))
 	plt.show()
 	return thetas
 	
 
-thetas=gradient_descent(X_augment,Y,theta, logistic_loss, 1000)
+thetas=gradient_descent(X_augment,Y,theta, logistic_loss, 100)
 
 
 
@@ -137,15 +151,19 @@ def plot_data_scatterplot(X, y, thetas=[]):
     pos = [(X[k, 1], X[k, 2]) for k in range(X.shape[0]) if y[k] == 1]
     neg = [(X[k, 1], X[k, 2]) for k in range(X.shape[0]) if y[k] == 0]
 
-    ax.scatter(*zip(*pos), c='darkgreen', marker='x')
+    ax.scatter(*zip(*pos), c='darkgreen', marker='x', linewidths=0)
     ax.scatter(*zip(*neg), c='red', marker='o', linewidths=0)
 
-    colors = iter(('blue', 'purple', 'black', 'red', 'green', 'orange', "#AABBCC", "#AA22CC", "#AA44CC", "#AACCCC", "#32BBCC", "#456CCF", "#AA44CC", "#AACCCC"))
+    colors = iter(('blue', 'purple', 'black', 'red', 'green', 'orange', "#AABBCC", "#AA22CC",
+     "#AA44CC", "#AACCCC", "#32BBCC", "#456CCF", "#AA44CC", "#AACCCC",
+     "#AAFF4CC", "#FFC4CC", "#322B2C", "#4565F", "#A344CC", "#A321CC"))
     
     contours = []
     for theta, _ in thetas:
-        xs = numpy.linspace(-1, 2, 200)
-        ys = numpy.linspace(-1, 2, 200)
+    	xmax=round(X.max()+1)
+    	xmin= round(X.min()-1)
+        xs = numpy.linspace(xmin, xmax, 200)
+        ys = numpy.linspace(xmin, xmax, 200)
         xsgrid, ysgrid = numpy.meshgrid(xs, ys)
         plane = numpy.zeros_like(xsgrid)
         for i in range(xsgrid.shape[0]):
@@ -153,8 +171,7 @@ def plot_data_scatterplot(X, y, thetas=[]):
                 plane[i, j] = numpy.array([1, xsgrid[i, j], ysgrid[i, j]]).dot(
                     theta)
     	
-        contours.append(ax.contour(xsgrid, ysgrid, plane, colors=colors.next(),
-                                    levels=[0]))
+        contours.append(ax.contour(xsgrid, ysgrid, plane, colors=colors.next(), levels=[0]))
 
     if thetas:
         plt.legend([cs.collections[0] for cs in contours],
@@ -163,6 +180,8 @@ def plot_data_scatterplot(X, y, thetas=[]):
     plt.show()
 
 plot_data_scatterplot(X_augment,Y,thetas)
+
+plot_data_scatterplot(X_augment,Y,[thetas[len(thetas)-1]])
 
 #theta=[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
 #cost= get_cost(X,Y,theta)
