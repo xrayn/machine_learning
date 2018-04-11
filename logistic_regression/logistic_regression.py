@@ -2,7 +2,7 @@ import numpy
 import matplotlib.pyplot as plt
 
 #data_tmp = numpy.genfromtxt('/home/ar/Downloads/machine-learning-ex1/ex1/ex1datatest.txt', delimiter=',')
-data = numpy.genfromtxt('/home/ar/Downloads/machine-learning-ex2/ex2/ex2data1.txt', delimiter=',')
+data = numpy.genfromtxt('./testdata/ex2data1.txt', delimiter=',')
 one = numpy.ones((len(data),1))
 
 
