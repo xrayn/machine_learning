@@ -4,10 +4,24 @@ import scipy.optimize as op
 
 
 #data_tmp = numpy.genfromtxt('/home/ar/Downloads/machine-learning-ex1/ex1/ex1datatest.txt', delimiter=',')
-data = numpy.genfromtxt('./testdata/ex2data1.txt', delimiter=',')
+data = numpy.genfromtxt('./testdata/ex2data2.txt', delimiter=',')
 one = numpy.ones((len(data),1))
 
-
+def feature_mapping(X1,X2):
+	#extract X1 and X2
+	
+	#X1=X[:,0]
+	#X2=X[:,1]
+	X1.shape = (X1.size, 1)
+	X2.shape = (X2.size, 1)
+	out = numpy.ones(shape=(X1[:, 0].size, 1))
+	degree = 6
+	for i in range(1,degree+1):
+		for j in range(i+1):
+			r = (X1 ** (i - j)) * (X2 ** j)
+			out=numpy.append(out,r, axis=1)
+			
+	return out
 
 def sigmoid(z):
 	s=1.0/(1.0+numpy.exp(-z))
@@ -47,11 +61,13 @@ def normalize2(X):
 	
 	return X
 
-X_normalized=normalize(X)
-#X_normalized=X
+#X_normalized=normalize(X)
+X_normalized=X
+
 
 # this simply adds 1's in front of the X
 X_augment=numpy.concatenate((one, X_normalized), axis=1)
+X_mapped=feature_mapping(X[:,0],X[:,1])
 
 
 def get_cost_quadratic(X,Y, theta=[0,0]):
@@ -132,8 +148,8 @@ def graph(formula, x_range):
     
 
 
-theta=numpy.zeros(((numpy.shape(data)[1]-1)))
-theta=[0.0, 0.0, 0.0]
+theta=numpy.zeros(((numpy.shape(X_mapped)[1])))
+#theta=[0.0, 0.0, 0.0]
 
 def gradient_descent(X,Y,theta, lossfunc, rounds=1000):
 	"""
@@ -144,10 +160,9 @@ def gradient_descent(X,Y,theta, lossfunc, rounds=1000):
 	#theta,cost,costdelta = logistic_gradient_descent_round(X,Y,theta,  0.0)
 	#thetas.append((theta, "start"))
 	for i in range(1,rounds):
-		theta,cost,cost_before, costdelta = logistic_gradient_descent_round(X,Y,theta,  1.0)
+		theta,cost,cost_before, costdelta = logistic_gradient_descent_round(X,Y,theta,  1)
 		costs.append(cost)
-		if i % 100==1:
-			
+		if i % (rounds/3)==1:
 			thetas.append((theta, "round"+str(i)))
 			#plt.plot(i,costs[i-1], "r.")
 			print i, theta, cost, cost_before, costdelta
@@ -157,7 +172,7 @@ def gradient_descent(X,Y,theta, lossfunc, rounds=1000):
 	return theta,thetas
 	
 
-gradient_theta, thetas=gradient_descent(X_augment,Y,theta, logistic_loss, 1000)
+gradient_theta, thetas=gradient_descent(X_mapped ,Y,theta, logistic_loss, 100)
 
 
 
@@ -170,10 +185,11 @@ def logistic_descent_optimal(X, Y, theta):
 	
 	return Result.x,Result
 
-optimal_theta, res =logistic_descent_optimal(X_augment,Y, theta)
+optimal_theta, res =logistic_descent_optimal(X_mapped,Y, theta)
 print "Calculated theta:", gradient_theta
 print "Optimal theta   :",optimal_theta
 print "Theta difference:",gradient_theta - optimal_theta
+
 
 thetas.append((optimal_theta,"optimal"))
 #graph(lambda x: x*theta[2]+x*theta[1]+x*theta[0], range(-1, 3))	
@@ -225,8 +241,50 @@ def plot_data_scatterplot(X, y, thetas=[]):
     fig.savefig('binary.png', dpi=80)
     plt.show()
 
-plot_data_scatterplot(X_augment,Y,thetas)
+def plot_contour(X,Y,theta):
+	u = numpy.linspace(-1, 1.5, 50)
+	v = numpy.linspace(-1, 1.5, 50)
+	
+	pos = numpy.where(Y == 1)
+	neg = numpy.where(Y == 0)
+
+	plt.scatter(X[pos, 0], X[pos, 1], marker='o', c='b')
+	plt.scatter(X[neg, 0], X[neg, 1], marker='x', c='r')
+	colors = iter(('blue', 'purple', 'black', 'red', 'green', 'orange', "#AABBCC", "#AA22CC",
+     "#AA44CC", "#AACCCC", "#32BBCC", "#456CCF", "#AA44CC", "#AACCCC",
+     "#AAFF4CC", "#FFC4CC", "#322B2C", "#4565F", "#A344CC", "#A321CC"))
+
+	z = numpy.zeros(shape=(len(u), len(v)))
+	contours = []
+	for theta, _ in thetas:
+		for i in range(len(u)):
+			for j in range(len(v)):
+				z[i, j] = (feature_mapping(numpy.array(u[i]), numpy.array(v[j])).dot(theta))
+		contours.append(plt.contour(u, v, z, levels=[0],colors=colors.next()))
+	
+
+
+	plt.title('lambda = %f' % 1)
+	plt.xlabel('Microchip Test 1')
+	plt.ylabel('Microchip Test 2')
+	
+	if thetas:
+		f=[cs.collections[0] for cs in contours]
+		g=[label for theta, label in thetas]
+		
+		plt.legend(f,g)
+		#plt.legend(['y = 1', 'y = 0', 'Decision boundary'])
+	plt.show()
+
+plot_contour(X,Y, thetas)
+#plot_data_scatterplot(X_augment,Y,thetas)
 #print X_augment
-#print (numpy.array([1,17,3.33]).dot(optimal_theta))
+#print logistic_loss((numpy.array([1,45,85])), optimal_theta)
+#plot_data_scatterplot(X_augment,Y,[thetas[len(thetas)-1]])
+
+#theta=[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+#cost= get_cost(X,Y,theta)
+#print cost
+#print get_cost([[1, 2], [1,3], [1, 4], [1, 5]], [7,6,5,4], [0.1,0.2] )
 
 
