@@ -1,5 +1,7 @@
 import numpy
 import matplotlib.pyplot as plt
+import scipy.optimize as op
+
 
 #data_tmp = numpy.genfromtxt('/home/ar/Downloads/machine-learning-ex1/ex1/ex1datatest.txt', delimiter=',')
 data = numpy.genfromtxt('./testdata/ex2data1.txt', delimiter=',')
@@ -48,6 +50,7 @@ def normalize2(X):
 X_normalized=normalize(X)
 #X_normalized=X
 
+# this simply adds 1's in front of the X
 X_augment=numpy.concatenate((one, X_normalized), axis=1)
 
 
@@ -61,7 +64,8 @@ def get_cost_quadratic(X,Y, theta=[0,0]):
 
 def logistic_loss(X,theta):
 	"""
-	Calculates the h(x) and cost of gradient descent for logistic regression
+	Calculates the h(x) logistic regression.
+	In this case function h() is sigmoid
 
 	Returns: (h_x) where sigmoid is applied for h_x
 	"""
@@ -71,30 +75,54 @@ def logistic_loss(X,theta):
 	# this calculates the cost for logistic regression
 	return h_x
 
-def logistic_cost(X,theta,Y):
+def logistic_cost(X,Y,theta):
+	"""
+	Calculates the cost of the current values
+	"""
 	m,n=X.shape
 	h_x=logistic_loss(X,theta)
 	h_x_sum=numpy.dot(-Y,numpy.log(h_x))-numpy.dot((1.0-Y),numpy.log(1.0-h_x))
 	cost=(float(1.0)/(m))*h_x_sum
 	return cost
 
-def logistic_gradient_descent_round(X,Y,theta,alpha):
+
+def logistic_gradient(X,Y,theta):
+	"""
+	Calculates the gradient for logistic regression
+	"""
 	eps = numpy.finfo(numpy.float32).eps
 	m,n=X.shape
 	h_x = logistic_loss(X,theta)
-
 	# need some clipping of values since it might overflow otherwise
 	h_x = numpy.clip(h_x, a_min=eps, a_max=1.0-eps)
-	
-	h_x_substracted=numpy.subtract(h_x,Y)
-	cost_before=logistic_cost(X,theta,Y)
+	h_x_substracted=numpy.subtract(h_x,Y) # sigmod of x_theta - y
+
 	# this is the general form of gradient decent.
 	# thetas are derived on the basis of the used loss function
-	theta= theta-(alpha*(1.0/float(m))*numpy.dot(h_x_substracted,X))
-	cost=logistic_cost(X,theta,Y)
-	return theta, cost_before, (cost_before-cost)
+	gradient= numpy.dot(h_x_substracted,X)/m
+	
+	return gradient
 
 
+def logistic_gradient_descent_round(X,Y,theta,alpha):
+	"""
+	Calculates new values for theta.
+	Applies learning rate alpha to the calculated gradient and
+	subtracts it from the current theta.
+
+	Returns: (theta) where theta is one step closer to the optima
+	"""	
+	cost_before=logistic_cost(X,Y,theta)
+	theta= theta-(alpha*logistic_gradient(X,Y,theta))
+	cost=logistic_cost(X,Y,theta)
+	return theta, cost, cost_before, (cost_before-cost)
+
+
+def logistic_cost_wrap(theta, X,Y):
+	return logistic_cost(X,Y,theta)
+
+def logistic_gradient_wrap(theta, X,Y):
+	return logistic_gradient(X,Y,theta)
 
 
 def graph(formula, x_range):  
@@ -108,28 +136,46 @@ theta=numpy.zeros(((numpy.shape(data)[1]-1)))
 theta=[0.0, 0.0, 0.0]
 
 def gradient_descent(X,Y,theta, lossfunc, rounds=1000):
+	"""
+	This is a self implemented gradient descent function.
+	"""
 	thetas=[]
 	costs=[]
 	#theta,cost,costdelta = logistic_gradient_descent_round(X,Y,theta,  0.0)
 	#thetas.append((theta, "start"))
 	for i in range(1,rounds):
-		theta,cost,costdelta = logistic_gradient_descent_round(X,Y,theta,  1.0)
+		theta,cost,cost_before, costdelta = logistic_gradient_descent_round(X,Y,theta,  1.0)
 		costs.append(cost)
-		if i % 10==1:
+		if i % 100==1:
 			
 			thetas.append((theta, "round"+str(i)))
 			#plt.plot(i,costs[i-1], "r.")
-			print i, theta, cost, costdelta
+			print i, theta, cost, cost_before, costdelta
 			plt.plot(i,cost, "r.")
 	#thetas.append((theta, "round"+str(i)))
 	plt.show()
-	return thetas
+	return theta,thetas
 	
 
-thetas=gradient_descent(X_augment,Y,theta, logistic_loss, 100)
+gradient_theta, thetas=gradient_descent(X_augment,Y,theta, logistic_loss, 1000)
 
 
 
+def logistic_descent_optimal(X, Y, theta):
+	"""
+	This uses a more sophisticated descent algorithm (TNC) from scipy.
+	"""
+	Result = op.minimize(fun=logistic_cost_wrap, x0 = theta, args = (X, Y), method = 'TNC', jac = logistic_gradient_wrap);
+	optimal_theta = Result.x;
+	
+	return Result.x,Result
+
+optimal_theta, res =logistic_descent_optimal(X_augment,Y, theta)
+print "Calculated theta:", gradient_theta
+print "Optimal theta   :",optimal_theta
+print "Theta difference:",gradient_theta - optimal_theta
+
+thetas.append((optimal_theta,"optimal"))
 #graph(lambda x: x*theta[2]+x*theta[1]+x*theta[0], range(-1, 3))	
 #plt.plot(X[:,1],Y, "ro")
 
@@ -180,12 +226,7 @@ def plot_data_scatterplot(X, y, thetas=[]):
     plt.show()
 
 plot_data_scatterplot(X_augment,Y,thetas)
-
-plot_data_scatterplot(X_augment,Y,[thetas[len(thetas)-1]])
-
-#theta=[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
-#cost= get_cost(X,Y,theta)
-#print cost
-#print get_cost([[1, 2], [1,3], [1, 4], [1, 5]], [7,6,5,4], [0.1,0.2] )
+#print X_augment
+#print (numpy.array([1,17,3.33]).dot(optimal_theta))
 
 
