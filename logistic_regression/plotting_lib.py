@@ -62,7 +62,7 @@ def plot_data_scatterplot(X, y, thetas=[], costs=None):
     fig.savefig('binary.png', dpi=80)
     plt.show()
 
-def plot_contour(X,Y,thetas, feature_mapping=None, costs=None):
+def plot_contour(X,Y,thetas, feature_mapping=None, costs=None, lamb=None):
 
 	if costs is None:
 		fig, ax1 = plt.subplots(1, 1, sharey=False)
@@ -91,7 +91,7 @@ def plot_contour(X,Y,thetas, feature_mapping=None, costs=None):
 	
 
 
-	ax1.set_title('lambda = %f' % 1)
+	ax1.set_title('lambda = %f' % lamb)
 	ax1.set_xlabel('Microchip Test 1')
 	ax1.set_ylabel('Microchip Test 2')
 	
