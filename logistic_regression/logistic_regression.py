@@ -52,16 +52,6 @@ def normalize(X):
 	return X
 
 
-def normalize2(X):
-	X=numpy.divide(X,numpy.max(X))
-	#X=X-numpy.mean(X)
-	
-	x= numpy.linalg.svd(X)
-	
-	return X
-
-
-
 def get_cost_quadratic(X,Y, theta=[0,0]):
 	m=numpy.shape(data)[0]
 	h_x=(numpy.dot(X,theta))
