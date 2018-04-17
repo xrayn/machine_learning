@@ -1,4 +1,4 @@
-import numpy
+import numpy as np
 import matplotlib.pyplot as plt
 import scipy.optimize as op
 
@@ -8,16 +8,16 @@ from logistic_regression_lib import *
 
 
 def case_1():
-	#data_tmp = numpy.genfromtxt('/home/ar/Downloads/machine-learning-ex1/ex1/ex1datatest.txt', delimiter=',')
+	#data_tmp = np.genfromtxt('/home/ar/Downloads/machine-learning-ex1/ex1/ex1datatest.txt', delimiter=',')
 	X,Y=load_data('./testdata/ex2data1.txt')
-	one = numpy.ones((len(X),1))
+	one = np.ones((len(X),1))
 	#X_normalized=normalize(X)
 	X_normalized=X
 
 	# this simply adds 1's in front of the X
-	X_mapped=numpy.concatenate((one, X_normalized), axis=1)
+	X_mapped=np.concatenate((one, X_normalized), axis=1)
 	#X_mapped=feature_mapping(X[:,0],X[:,1])
-	theta=numpy.zeros(((numpy.shape(X_mapped)[1])))
+	theta=np.zeros(((np.shape(X_mapped)[1])))
 	#theta=[0.0, 0.0, 0.0]
 	gradient_theta, thetas, costs=gradient_descent(X_mapped ,Y,theta, logistic_loss, rounds=10000, alpha=0.001, granularity=10)
 	optimal_theta, res =logistic_descent_optimal2(X_mapped,Y, theta)
@@ -29,12 +29,12 @@ def case_1():
 	plot_data_scatterplot(X_mapped,Y,thetas, costs)
 
 def case_2():
-	#data_tmp = numpy.genfromtxt('/home/ar/Downloads/machine-learning-ex1/ex1/ex1datatest.txt', delimiter=',')
+	#data_tmp = np.genfromtxt('/home/ar/Downloads/machine-learning-ex1/ex1/ex1datatest.txt', delimiter=',')
 	X,Y=load_data('./testdata/ex2data2.txt')
 
 	X_mapped=feature_mapping(X[:,0],X[:,1])
 	lamb=0
-	theta=numpy.zeros(((numpy.shape(X_mapped)[1])))
+	theta=np.zeros(((np.shape(X_mapped)[1])))
 	gradient_theta, thetas, costs=gradient_descent(X_mapped ,Y,theta, logistic_loss, rounds=1000, alpha=1, granularity=3, lamb=lamb)
 	optimal_theta, res =logistic_descent_optimal2(X_mapped,Y, theta)
 	print "Calculated theta:", gradient_theta
@@ -47,12 +47,12 @@ def case_2():
 
 
 def case_3():
-	#data_tmp = numpy.genfromtxt('/home/ar/Downloads/machine-learning-ex1/ex1/ex1datatest.txt', delimiter=',')
+	#data_tmp = np.genfromtxt('/home/ar/Downloads/machine-learning-ex1/ex1/ex1datatest.txt', delimiter=',')
 	X,Y=load_data('./testdata/ex2data2.txt')
 
 	X_mapped=feature_mapping(X[:,0],X[:,1])
 	lamb=0
-	theta=numpy.zeros(((numpy.shape(X_mapped)[1])))
+	theta=np.zeros(((np.shape(X_mapped)[1])))
 	thetas=[]
 	optimal_theta, res =logistic_descent_optimal2(X_mapped,Y, theta)
 	thetas.append((optimal_theta,"optimal_old"))

@@ -1,4 +1,4 @@
-import numpy
+import numpy as np
 import matplotlib.pyplot as plt
 import scipy.optimize as op
 
@@ -13,31 +13,31 @@ def feature_mapping(X1,X2):
 	#X2=X[:,1]
 	X1.shape = (X1.size, 1)
 	X2.shape = (X2.size, 1)
-	out = numpy.ones(shape=(X1[:, 0].size, 1))
+	out = np.ones(shape=(X1[:, 0].size, 1))
 	degree = 6
 	for i in range(1,degree+1):
 		for j in range(i+1):
 			r = (X1 ** (i - j)) * (X2 ** j)
-			out=numpy.append(out,r, axis=1)
+			out=np.append(out,r, axis=1)
 			
 	return out
 
 def sigmoid(z):
-	s=1.0/(1.0+numpy.exp(-z))
+	s=1.0/(1.0+np.exp(-z))
 	return s
 
 
 def split_x_y(data):
-	columns=numpy.shape(data)[1]
-	rows=numpy.shape(data)[0]
+	columns=np.shape(data)[1]
+	rows=np.shape(data)[0]
 	X=data[:, :(columns-1)]
 	Y=data[:,(columns-1)]
 	
 	#adjust
-	#print numpy.mean(X)
-	#print numpy.max(X)
-	#X=numpy.divide(X,numpy.max(X))
-	#X=X-numpy.mean(X)
+	#print np.mean(X)
+	#print np.max(X)
+	#X=np.divide(X,np.max(X))
+	#X=X-np.mean(X)
 	
 	return (X,Y)
 
@@ -46,17 +46,17 @@ def split_x_y(data):
 def normalize(X):
 	mean=X.mean(axis=0)
 	std=X.std(axis=0)
-	#X=numpy.divide(X,numpy.max(X))
+	#X=np.divide(X,np.max(X))
 	X=(X-mean)/std
 	
 	return X
 
 
 def get_cost_quadratic(X,Y, theta=[0,0]):
-	m=numpy.shape(data)[0]
-	h_x=(numpy.dot(X,theta))
+	m=np.shape(data)[0]
+	h_x=(np.dot(X,theta))
 	
-	h_x_sum=numpy.sum(numpy.subtract(h_x,Y)**2)
+	h_x_sum=np.sum(np.subtract(h_x,Y)**2)
 	cost=(float(1)/(2*m))*h_x_sum
 	return cost
 
@@ -67,7 +67,7 @@ def logistic_loss(X,theta):
 
 	Returns: (h_x) where sigmoid is applied for h_x
 	"""
-	h_x=numpy.dot(X,theta)
+	h_x=np.dot(X,theta)
 	# we apply sigmoid function here to get a bowl curve for GD
 	h_x=sigmoid(h_x)
 	# this calculates the cost for logistic regression
@@ -79,7 +79,7 @@ def logistic_cost(X,Y,theta, lamb=1):
 	"""
 	m,n=X.shape
 	h_x=logistic_loss(X,theta)
-	h_x_sum=numpy.dot(-Y,numpy.log(h_x))-numpy.dot((1.0-Y),numpy.log(1.0-h_x))
+	h_x_sum=np.dot(-Y,np.log(h_x))-np.dot((1.0-Y),np.log(1.0-h_x))
 	cost=(float(1.0)/(m))*h_x_sum
 	return cost
 
@@ -89,7 +89,7 @@ def logistic_cost_regularized(X,Y,theta, lamb=1):
 	"""
 	m,n=X.shape
 	h_x=logistic_loss(X,theta)
-	h_x_sum=numpy.dot(-Y,numpy.log(h_x))-numpy.dot((1.0-Y),numpy.log(1.0-h_x))
+	h_x_sum=np.dot(-Y,np.log(h_x))-np.dot((1.0-Y),np.log(1.0-h_x))
 	
 	#regularized theta does not consider the thetha[0]	
 	thetaR = theta[1:]
@@ -105,18 +105,18 @@ def logistic_gradient(X,Y,theta):
 	"""
 	Calculates the gradient for logistic regression
 	"""
-	eps = numpy.finfo(numpy.float32).eps
+	eps = np.finfo(np.float32).eps
 	m,n=X.shape
 	h_x = logistic_loss(X,theta)
 	# need some clipping of values since it might overflow otherwise
-	h_x = numpy.clip(h_x, a_min=eps, a_max=1.0-eps)
-	h_x_substracted=numpy.subtract(h_x,Y) # sigmod of x_theta - y
+	h_x = np.clip(h_x, a_min=eps, a_max=1.0-eps)
+	h_x_substracted=np.subtract(h_x,Y) # sigmod of x_theta - y
 
 	# this is the general form of gradient decent.
 	# thetas are derived on the basis of the used loss function
 	
 	# this is correct for the non-regularized case
-	gradient= numpy.dot(h_x_substracted,X)/float(m)
+	gradient= np.dot(h_x_substracted,X)/float(m)
 	
 	return gradient
 
@@ -184,7 +184,7 @@ def logistic_gradient_wrap2(theta, X,Y, lamb=1):
 
 
 def graph(formula, x_range):  
-    x = numpy.array(x_range)  
+    x = np.array(x_range)  
     y = formula(x)  # <- note now we're calling the function 'formula' with x
     plt.plot(x, y)  
     
@@ -228,65 +228,8 @@ def logistic_descent_optimal2(X, Y, theta):
 	return Result.x,Result
 
 def load_data(filename):
-	data = numpy.genfromtxt(filename, delimiter=',')
+	data = np.genfromtxt(filename, delimiter=',')
 	
 	X,Y=split_x_y(data)
 	return X,Y
 
-def case_1():
-	#data_tmp = numpy.genfromtxt('/home/ar/Downloads/machine-learning-ex1/ex1/ex1datatest.txt', delimiter=',')
-	X,Y=load_data('./testdata/ex2data1.txt')
-	one = numpy.ones((len(X),1))
-	#X_normalized=normalize(X)
-	X_normalized=X
-
-	# this simply adds 1's in front of the X
-	X_mapped=numpy.concatenate((one, X_normalized), axis=1)
-	#X_mapped=feature_mapping(X[:,0],X[:,1])
-	theta=numpy.zeros(((numpy.shape(X_mapped)[1])))
-	#theta=[0.0, 0.0, 0.0]
-	gradient_theta, thetas, costs=gradient_descent(X_mapped ,Y,theta, logistic_loss, rounds=10000, alpha=0.001, granularity=10)
-	optimal_theta, res =logistic_descent_optimal2(X_mapped,Y, theta)
-	print "Calculated theta:", gradient_theta
-	print "Optimal theta   :",optimal_theta
-	print "Theta difference:",gradient_theta - optimal_theta
-
-	thetas.append((optimal_theta,"optimal"))
-	plot_data_scatterplot(X_mapped,Y,thetas, costs)
-
-def case_2():
-	#data_tmp = numpy.genfromtxt('/home/ar/Downloads/machine-learning-ex1/ex1/ex1datatest.txt', delimiter=',')
-	X,Y=load_data('./testdata/ex2data2.txt')
-
-	X_mapped=feature_mapping(X[:,0],X[:,1])
-	lamb=0
-	theta=numpy.zeros(((numpy.shape(X_mapped)[1])))
-	gradient_theta, thetas, costs=gradient_descent(X_mapped ,Y,theta, logistic_loss, rounds=1000, alpha=1, granularity=3, lamb=lamb)
-	optimal_theta, res =logistic_descent_optimal2(X_mapped,Y, theta)
-	print "Calculated theta:", gradient_theta
-	print "Optimal theta   :",optimal_theta
-	print "Theta difference:",gradient_theta - optimal_theta
-
-	thetas.append((optimal_theta,"optimal"))
-	plot_contour(X,Y, thetas, feature_mapping=feature_mapping, costs=costs, lamb=lamb)
-
-
-
-def case_3():
-	#data_tmp = numpy.genfromtxt('/home/ar/Downloads/machine-learning-ex1/ex1/ex1datatest.txt', delimiter=',')
-	X,Y=load_data('./testdata/ex2data2.txt')
-
-	X_mapped=feature_mapping(X[:,0],X[:,1])
-	lamb=0
-	theta=numpy.zeros(((numpy.shape(X_mapped)[1])))
-	thetas=[]
-	optimal_theta, res =logistic_descent_optimal2(X_mapped,Y, theta)
-	thetas.append((optimal_theta,"optimal_old"))
-
-	optimal_theta, res =logistic_descent_optimal(X_mapped,Y, theta, lamb=0)
-	thetas.append((optimal_theta,"optimal_l0"))
-	optimal_theta, res =logistic_descent_optimal(X_mapped,Y, theta, lamb=1)
-	thetas.append((optimal_theta,"optimal_l1"))
-	print optimal_theta
-	#print thetas
-	plot_contour(X,Y, thetas, feature_mapping=feature_mapping, lamb=lamb)
