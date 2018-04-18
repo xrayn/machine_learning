@@ -129,38 +129,53 @@ def test(thetas, filename=""):
 
 
 do_normalize=False
-filename="optimal.lambda0.mnist_thetas.pickle"
+filename="optimal.lambda00.mnist_thetas.pickle"
 thetas=train_digits(retrain=False, theta_file=filename,do_normalize=do_normalize, lamb=.0)
 test(thetas, filename)
 
-filename="optimal2.lambda0.mnist_thetas.pickle"
-thetas=train_digits2(retrain=False, theta_file=filename,do_normalize=do_normalize, lamb=.0)
+filename="optimal.lambda01.mnist_thetas.pickle"
+thetas=train_digits(retrain=False, theta_file=filename,do_normalize=do_normalize, lamb=.1)
 test(thetas, filename)
 
-filename="optimal.lambda1.mnist_thetas.pickle"
-thetas=train_digits(retrain=False, theta_file=filename,do_normalize=do_normalize, lamb=1.0)
+filename="optimal.lambda02.mnist_thetas.pickle"
+thetas=train_digits(retrain=False, theta_file=filename,do_normalize=do_normalize, lamb=.2)
 test(thetas, filename)
 
-filename="optimal2.lambda1.mnist_thetas.pickle"
-thetas=train_digits2(retrain=False, theta_file=filename,do_normalize=do_normalize, lamb=1.0)
+filename="optimal.lambda03.mnist_thetas.pickle"
+thetas=train_digits(retrain=False, theta_file=filename,do_normalize=do_normalize, lamb=.3)
 test(thetas, filename)
 
-do_normalize=True
-filename="normalized.optimal.lambda0.mnist_thetas.pickle"
-thetas=train_digits(retrain=False, theta_file=filename,do_normalize=do_normalize, lamb=.0)
+filename="optimal.lambda04.mnist_thetas.pickle"
+thetas=train_digits(retrain=False, theta_file=filename,do_normalize=do_normalize, lamb=.4)
 test(thetas, filename)
 
-filename="normalized.optimal2.lambda0.mnist_thetas.pickle"
-thetas=train_digits2(retrain=False, theta_file=filename,do_normalize=do_normalize, lamb=.0)
+filename="optimal.lambda05.mnist_thetas.pickle"
+thetas=train_digits(retrain=False, theta_file=filename,do_normalize=do_normalize, lamb=.5)
 test(thetas, filename)
 
-filename="normalized.optimal.lambda1.mnist_thetas.pickle"
-thetas=train_digits(retrain=False, theta_file=filename,do_normalize=do_normalize, lamb=1.0)
+filename="optimal.lambda06.mnist_thetas.pickle"
+thetas=train_digits(retrain=False, theta_file=filename,do_normalize=do_normalize, lamb=.6)
 test(thetas, filename)
 
-filename="normalized.optimal2.lambda1.mnist_thetas.pickle"
-thetas=train_digits2(retrain=False, theta_file=filename,do_normalize=do_normalize, lamb=1.0)
+filename="optimal.lambda07.mnist_thetas.pickle"
+thetas=train_digits(retrain=False, theta_file=filename,do_normalize=do_normalize, lamb=.7)
 test(thetas, filename)
+
+filename="optimal.lambda08.mnist_thetas.pickle"
+thetas=train_digits(retrain=False, theta_file=filename,do_normalize=do_normalize, lamb=.8)
+test(thetas, filename)
+
+filename="optimal.lambda09.mnist_thetas.pickle"
+thetas=train_digits(retrain=False, theta_file=filename,do_normalize=do_normalize, lamb=.9)
+test(thetas, filename)
+
+
+#do_normalize=True
+#
+#filename="normalized.optimal.lambda0.mnist_thetas.pickle"
+#thetas=train_digits(retrain=False, theta_file=filename,do_normalize=do_normalize, lamb=.0)
+#test(thetas, filename)
+
 
 
 exit()

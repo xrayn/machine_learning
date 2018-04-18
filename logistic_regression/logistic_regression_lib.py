@@ -192,13 +192,6 @@ def logistic_gradient_wrap(theta, X,Y, lamb=1):
 	return logistic_gradient_regularized(X,Y,theta,lamb)
 
 
-def logistic_cost_wrap2(theta, X,Y, lamb=1):
-	return logistic_cost(X,Y,theta)
-
-def logistic_gradient_wrap2(theta, X,Y, lamb=1):
-	return logistic_gradient(X,Y,theta)
-
-
 def graph(formula, x_range):  
     x = np.array(x_range)  
     y = formula(x)  # <- note now we're calling the function 'formula' with x
@@ -228,20 +221,13 @@ def gradient_descent(X,Y,theta, lossfunc, rounds=1000, alpha=1, granularity=10, 
 def logistic_descent_optimal(X, Y, theta, lamb, method="TNC"):
 	"""
 	This uses a more sophisticated descent algorithm (TNC) from scipy.
+	In case lamb is set to 0, the regularization is not applied.
 	"""
 	Result = op.minimize(fun=logistic_cost_wrap, x0 = theta, args = (X, Y, lamb), method = method, jac = logistic_gradient_wrap);
 	optimal_theta = Result.x;
 	
 	return Result.x,Result
 
-def logistic_descent_optimal2(X, Y, theta, lamb, method="TNC"):
-	"""
-	This uses a more sophisticated descent algorithm (TNC) from scipy.
-	"""
-	Result = op.minimize(fun=logistic_cost_wrap2, x0 = theta, args = (X, Y), method = method, jac = logistic_gradient_wrap2);
-	optimal_theta = Result.x;
-	
-	return Result.x,Result
 
 def load_data(filename):
 	data = np.genfromtxt(filename, delimiter=',')
