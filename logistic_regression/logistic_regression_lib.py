@@ -23,8 +23,9 @@ def feature_mapping(X1,X2):
 	return out
 
 def sigmoid(z):
-	s=1.0/(1.0+np.exp(-z))
-	return s
+	with np.errstate(over='ignore', invalid='ignore'):
+		s=1.0/(1.0+np.exp(-z))
+		return s
 
 
 def split_x_y(data):
@@ -47,13 +48,19 @@ def normalize(X):
 	# this function is not correct, I assume
 	eps = np.finfo(np.float32).eps
 	#X = np.clip(X, a_min=eps, a_max=1.0-eps)
-	mean=X.mean(axis=0)
-	abc=X.std(axis=0)
-	abc = np.clip(abc, a_min=eps, a_max=1.0-eps)
+	mean=X.mean()
+	mini=X.min()
+	maxi=X.max()
+	std=X.std()
+
+	#print mini, maxi, mean, std
+	#print X
+	#exit()
+	#abc = np.clip(abc, a_min=eps, a_max=1.0-eps)
 	#X=np.divide(X,np.max(X))
 	
-	X=(X-mean)/abc #/std
-
+	X=(X-mini)/(maxi-mini) #/std
+	#X = np.clip(X, a_min=eps, a_max=1.0-eps)
 	return X
 
 
@@ -75,6 +82,9 @@ def logistic_loss(X,theta):
 	h_x=np.dot(X,theta)
 	# we apply sigmoid function here to get a bowl curve for GD
 	h_x=sigmoid(h_x)
+	eps = np.finfo(np.float32).eps
+	h_x = np.clip(h_x, a_min=eps, a_max=1.0-eps)
+
 	# this calculates the cost for logistic regression
 	return h_x
 
@@ -215,20 +225,20 @@ def gradient_descent(X,Y,theta, lossfunc, rounds=1000, alpha=1, granularity=10, 
 	
 	return theta,thetas, costs
 
-def logistic_descent_optimal(X, Y, theta, lamb):
+def logistic_descent_optimal(X, Y, theta, lamb, method="TNC"):
 	"""
 	This uses a more sophisticated descent algorithm (TNC) from scipy.
 	"""
-	Result = op.minimize(fun=logistic_cost_wrap, x0 = theta, args = (X, Y, lamb), method = 'TNC', jac = logistic_gradient_wrap);
+	Result = op.minimize(fun=logistic_cost_wrap, x0 = theta, args = (X, Y, lamb), method = method, jac = logistic_gradient_wrap);
 	optimal_theta = Result.x;
 	
 	return Result.x,Result
 
-def logistic_descent_optimal2(X, Y, theta):
+def logistic_descent_optimal2(X, Y, theta, lamb, method="TNC"):
 	"""
 	This uses a more sophisticated descent algorithm (TNC) from scipy.
 	"""
-	Result = op.minimize(fun=logistic_cost_wrap2, x0 = theta, args = (X, Y), method = 'TNC', jac = logistic_gradient_wrap2);
+	Result = op.minimize(fun=logistic_cost_wrap2, x0 = theta, args = (X, Y), method = method, jac = logistic_gradient_wrap2);
 	optimal_theta = Result.x;
 	
 	return Result.x,Result
