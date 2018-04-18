@@ -44,11 +44,16 @@ def split_x_y(data):
 
 
 def normalize(X):
+	# this function is not correct, I assume
+	eps = np.finfo(np.float32).eps
+	#X = np.clip(X, a_min=eps, a_max=1.0-eps)
 	mean=X.mean(axis=0)
-	std=X.std(axis=0)
+	abc=X.std(axis=0)
+	abc = np.clip(abc, a_min=eps, a_max=1.0-eps)
 	#X=np.divide(X,np.max(X))
-	X=(X-mean)/std
 	
+	X=(X-mean)/abc #/std
+
 	return X
 
 
@@ -107,9 +112,10 @@ def logistic_gradient(X,Y,theta):
 	"""
 	eps = np.finfo(np.float32).eps
 	m,n=X.shape
+	
 	h_x = logistic_loss(X,theta)
 	# need some clipping of values since it might overflow otherwise
-	h_x = np.clip(h_x, a_min=eps, a_max=1.0-eps)
+	#h_x = np.clip(h_x, a_min=eps, a_max=1.0-eps)
 	h_x_substracted=np.subtract(h_x,Y) # sigmod of x_theta - y
 
 	# this is the general form of gradient decent.
@@ -203,7 +209,7 @@ def gradient_descent(X,Y,theta, lossfunc, rounds=1000, alpha=1, granularity=10, 
 			costs.append(cost)
 			thetas.append((theta, "round"+str(i)))
 			#plt.plot(i,costs[i-1], "r.")
-			print i, theta, cost, cost_before, costdelta
+			print i, cost, cost_before, costdelta
 			#plt.plot(i,cost, "r.")
 	#thetas.append((theta, "round"+str(i)))
 	
