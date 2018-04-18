@@ -17,7 +17,10 @@ mndata.gz = True
 
 
 
+#import pyculib as pycu
+
 def predict(x,theta):
+	#return sigmoid(pycu.blas.dot(x,theta))
 	return sigmoid(x.dot(theta))
 
 def norm(x, should_normalize=False):
@@ -47,10 +50,10 @@ def train_digits(retrain=False, theta_file="mnist_thetas.pickle", do_normalize=F
 			for c in xrange(len(Y)):
 				if Y[c]==x:
 					#print c, Y[c], x,1
-					YS.append(1)
+					YS.append(1.0)
 				else:
 					#print c, Y[c], x,0
-				 	YS.append(0)
+				 	YS.append(0.0)
 			YS=np.array(YS)
 			#train the model for 0 to 9
 			print "Counting", x," in YS = [", collections.Counter(YS),"]"
@@ -167,6 +170,10 @@ test(thetas, filename)
 
 filename="optimal.lambda09.mnist_thetas.pickle"
 thetas=train_digits(retrain=False, theta_file=filename,do_normalize=do_normalize, lamb=.9)
+test(thetas, filename)
+
+filename="optimal.lambda10.mnist_thetas.pickle"
+thetas=train_digits(retrain=False, theta_file=filename,do_normalize=do_normalize, lamb=1.0)
 test(thetas, filename)
 
 

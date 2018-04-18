@@ -4,6 +4,11 @@ import scipy.optimize as op
 
 from plotting_lib import *
 
+#import pyculib as pycu
+
+
+#from numba import jit,float32,float64, vectorize
+
 
 
 def feature_mapping(X1,X2):
@@ -21,6 +26,7 @@ def feature_mapping(X1,X2):
 			out=np.append(out,r, axis=1)
 			
 	return out
+
 
 def sigmoid(z):
 	with np.errstate(over='ignore', invalid='ignore'):
@@ -88,15 +94,6 @@ def logistic_loss(X,theta):
 	# this calculates the cost for logistic regression
 	return h_x
 
-def logistic_cost(X,Y,theta, lamb=1):
-	"""
-	Calculates the cost of the current values
-	"""
-	m,n=X.shape
-	h_x=logistic_loss(X,theta)
-	h_x_sum=np.dot(-Y,np.log(h_x))-np.dot((1.0-Y),np.log(1.0-h_x))
-	cost=(float(1.0)/(m))*h_x_sum
-	return cost
 
 def logistic_cost_regularized(X,Y,theta, lamb=1):
 	"""
@@ -105,7 +102,6 @@ def logistic_cost_regularized(X,Y,theta, lamb=1):
 	m,n=X.shape
 	h_x=logistic_loss(X,theta)
 	h_x_sum=np.dot(-Y,np.log(h_x))-np.dot((1.0-Y),np.log(1.0-h_x))
-	
 	#regularized theta does not consider the thetha[0]	
 	thetaR = theta[1:]
 	lambda_term=((lamb)/2.0*m)*thetaR.dot(thetaR)
