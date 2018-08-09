@@ -174,10 +174,10 @@ def logistic_gradient_descent_round(X,Y,theta,alpha, lamb=1):
 	Returns: (theta) where theta is one step closer to the optima
 	"""	
 	m,n=X.shape
-	cost_before=logistic_cost(X,Y,theta)
+	cost_before=logistic_cost_wrap(theta,X,Y)
 	
 	theta= theta-(alpha*logistic_gradient(X,Y,theta))
-	cost=logistic_cost(X,Y,theta)
+	cost=logistic_cost_wrap(theta,X,Y)
 	return theta, cost, cost_before, (cost_before-cost)
 
 

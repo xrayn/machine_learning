@@ -20,7 +20,7 @@ def case_1():
 	theta=np.zeros(((np.shape(X_mapped)[1])))
 	#theta=[0.0, 0.0, 0.0]
 	gradient_theta, thetas, costs=gradient_descent(X_mapped ,Y,theta, logistic_loss, rounds=10000, alpha=0.001, granularity=10)
-	optimal_theta, res =logistic_descent_optimal2(X_mapped,Y, theta, lamb=0)
+	optimal_theta, res =logistic_descent_optimal(X_mapped,Y, theta, lamb=0)
 	print "Calculated theta:", gradient_theta
 	print "Optimal theta   :",optimal_theta
 	print "Theta difference:",gradient_theta - optimal_theta
@@ -36,7 +36,7 @@ def case_2():
 	lamb=0
 	theta=np.zeros(((np.shape(X_mapped)[1])))
 	gradient_theta, thetas, costs=gradient_descent(X_mapped ,Y,theta, logistic_loss, rounds=1000, alpha=1, granularity=3, lamb=lamb)
-	optimal_theta, res =logistic_descent_optimal2(X_mapped,Y, theta, lamb=0)
+	optimal_theta, res =logistic_descent_optimal(X_mapped,Y, theta, lamb=0)
 	print "Calculated theta:", gradient_theta
 	print "Optimal theta   :",optimal_theta
 	print "Theta difference:",gradient_theta - optimal_theta
@@ -54,8 +54,6 @@ def case_3():
 	lamb=0
 	theta=np.zeros(((np.shape(X_mapped)[1])))
 	thetas=[]
-	optimal_theta, res =logistic_descent_optimal2(X_mapped,Y, theta, lamb=0)
-	thetas.append((optimal_theta,"optimal_old"))
 
 	optimal_theta, res =logistic_descent_optimal(X_mapped,Y, theta, lamb=0)
 	thetas.append((optimal_theta,"optimal_l0"))
@@ -65,6 +63,6 @@ def case_3():
 	#print thetas
 	plot_contour(X,Y, thetas, feature_mapping=feature_mapping, lamb=lamb)
 
-case_1()
+#case_1()
 case_2()
-case_3()
+#case_3()
