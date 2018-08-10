@@ -157,20 +157,58 @@ w2_neurons = 10
 print(theta2.shape)
 w2 = np.random.rand(w2_neurons, w1.shape[0] + 1) * 2 * epsilon_init - epsilon_init
 
-print(w2)
+print("w2", w2)
+
 
 def sigmoid_gradient(z):
     return sigmoid(z)*(1-sigmoid(z))
 
 
 
-#nn = NeuronalNet(X, theta1, theta2, y)
-nn = NeuronalNet(X, w1, w2, y)
+nn = NeuronalNet(X, theta1, theta2, y)
+#nn = NeuronalNet(X, w1, w2, y)
 cost = 0.0
-forward_vector = X[0]
+nn.full_feed_forward()
 
-nn.feed_forward(forward_vector)
-print nn.get_output()
+def backprop():
+    # Step 1
+    forward_vector = X[0]
+    nn.feed_forward(forward_vector)
+
+    y_t = np.zeros(10)
+    y_t[y[0] - 1] = 1.
+    # output_delta=(nn.output_layer - y_t)
+    # print output_delta
+
+    # # Step 2
+    # # z^2 =(theta.dot)
+    # hidden_delta=w2.T.dot(output_delta)*sigmoid_gradient(nn.hidden_layer)
+    # hidden_delta=hidden_delta[1:]
+    # print "hidden_delta", hidden_delta
+
+    # we now have d^2 and d^3
+
+    # calculate the gradient
+    # 
+    a_1 = forward_vector
+    z_2 = a_1.dot(w1.T)
+    a_2 = sigmoid(z_2)
+    z_3 = a_2.dot(w2.T[1:])
+    a_3 = sigmoid(z_3)
+
+
+    d_3=a_3-y_t
+    print "d3", d_3.shape, "w2", w2.shape, "z2", z_2.shape
+    d_2=w2.T*d_3
+    print d_2.shape
+    print d_2.T.shape
+
+    d_2=d_2.T*sigmoid_gradient(add_1s_hidden_layers(z_2))
+
+
+    print a_2.shape
+
+
 
 # for i in range(X.shape[0]):
 #     index, value = nn.feed_forward(i)
