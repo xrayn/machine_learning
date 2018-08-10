@@ -62,7 +62,10 @@ class NeuronalNet:
         self.cost += cost
         return cost
 
-    def logistic_cost_regularized(self, h_x, lamb=1):
+    def get_output(self):
+        return self.output_layer
+
+    def logistic_cost_regularized(self, lamb=1):
 
         theta_1_sum = 0
         theta_2_sum = 0
@@ -83,31 +86,29 @@ class NeuronalNet:
         print((lamb) / (2.0 * self.m))
         print((theta_1_sum + theta_2_sum))
         print(lambda_term)
-        h_x_sum = h_x + lambda_term
-        self.cost_regularized = h_x_sum
-        return h_x_sum
+        self.cost_regularized = lambda_term
+        return lambda_term
 
-    def feed_forward(self, index=0):
-        # print("-------------")
-        # print(self.w1.shape)
-        # print(self.w1)
-        # print("-------------")
-        # print(self.w1.shape)
-        # print(self.w1.T)
-        # print("-------------")
-        self.hidden_layer = sigmoid(self.input_layer[index].dot(self.w1.T))
+    def full_feed_forward(self):
+        res=[]
+        for i in range(self.input_layer.shape[0]):
+            forward_vector = self.input_layer[i]
+            index, value = nn.feed_forward(forward_vector)
+            y_t = np.zeros(10)
+            # y_t[self.y-1]=1.0
+            y_t[self.y[i] - 1] = 1.
+        # print(y_t)
+            m, n = self.input_layer.shape
+            self.logistic_cost(self.output_layer, y_t)
+            res.append((index, value))
+        return res
+
+    def feed_forward(self, forward_vector):
+        self.hidden_layer = sigmoid(forward_vector.dot(self.w1.T))
         self.hidden_layer = add_1s_hidden_layers(self.hidden_layer)
         self.output_layer = sigmoid(self.hidden_layer.T.dot(self.w2.T))
 
         # first transform y to a vector
-
-        y_t = np.zeros(10)
-        # y_t[self.y-1]=1.0
-
-        y_t[self.y[index] - 1] = 1.
-        # print(y_t)
-        m, n = self.input_layer.shape
-        cost = self.logistic_cost(self.output_layer, y_t)
         res = (np.argmax(self.output_layer), np.max(self.output_layer))
 
         return res
@@ -144,29 +145,42 @@ def add_1s_hidden_layers(layer):
 # this simply adds 1's in front of the X
 X = add_1s(X)
 print()
+
+epsilon_init = 0.12
+
+
 print(theta1.shape)
 w1_neurons = 25
-w1 = np.random.rand(w1_neurons, X.shape[1])
+w1 = np.random.rand(w1_neurons, X.shape[1]) * 2 * epsilon_init - epsilon_init
 print(w1.shape)
 w2_neurons = 10
 print(theta2.shape)
-w2 = np.random.rand(w2_neurons, w1.shape[0] + 1)
-print(w2.shape)
+w2 = np.random.rand(w2_neurons, w1.shape[0] + 1) * 2 * epsilon_init - epsilon_init
+
+print(w2)
+
+def sigmoid_gradient(z):
+    return sigmoid(z)*(1-sigmoid(z))
 
 
-nn = NeuronalNet(X, theta1, theta2, y)
-# nn = NeuronalNet(X, w1, w2, y)
+
+#nn = NeuronalNet(X, theta1, theta2, y)
+nn = NeuronalNet(X, w1, w2, y)
 cost = 0.0
+forward_vector = X[0]
 
-for i in range(X.shape[0]):
-    index, value = nn.feed_forward(i)
+nn.feed_forward(forward_vector)
+print nn.get_output()
 
-    if not y[i] - 1 == index:
-        print(y[i] - 1, index, value, "ERROR")
-    else:
-        print(y[i] - 1, index, value, "OK")
+# for i in range(X.shape[0]):
+#     index, value = nn.feed_forward(i)
 
-nn.logistic_cost_regularized(cost, 1)
+#     if not y[i] - 1 == index:
+#         print(y[i] - 1, index, value, "ERROR")
+#     else:
+#         print(y[i] - 1, index, value, "OK")
+
+nn.logistic_cost_regularized(1)
 
 cost = nn.get_cost()
 print("Cost [" + str(cost) + "]")
