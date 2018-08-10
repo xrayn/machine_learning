@@ -2,9 +2,9 @@ import scipy.io
 import numpy as np
 import sys
 
+
 sys.path.append('../logistic_regression')
 from logistic_regression_lib import *
-
 
 mat = scipy.io.loadmat('data/ex3data1.mat')
 
@@ -141,42 +141,6 @@ def add_1s_hidden_layers(layer):
     return np.insert(layer, 0, 1., axis=0)
 
 
-def predict(x, theta1, theta2):
-    # print(x[0,:].shape)
-    # print("theta1", theta1.shape)
-    out_layer = propagate(x, theta1, theta2)
-    return np.argmax(out_layer), np.max(out_layer)
-
-
-def propagate(x, theta1, theta2):
-    l1 = sigmoid(x.T.dot(theta1.T))
-    l1_1s = add_1s_hidden_layers(l1)
-    l2 = sigmoid(l1_1s.T.dot(theta2.T))
-    return l2
-
-
-def predict_floop(x, theta1, theta2):
-    # print(x[0,:].shape)
-    # print("theta1", theta1.shape)
-
-    l1 = np.zeros((theta1.shape[0], 1))
-    for i in range(theta1.shape[0]):
-        l1[i] = x.dot(theta1[i, :])
-
-    l1 = sigmoid(l1)
-
-    one = np.ones((len(l1), 1))
-    #l1=np.concatenate((one, l1), axis=1)
-    l2 = np.zeros((theta2.shape[0], 1))
-    l1_1s = np.insert(l1, 0, 1., axis=0)
-    for i in range(theta2.shape[0]):
-        l2[i] = l1_1s.T.dot(theta2[i, :])
-
-    l2 = sigmoid(l2)
-
-    return np.argmax(l2), np.max(l2)
-
-
 # this simply adds 1's in front of the X
 X = add_1s(X)
 print()
@@ -191,7 +155,7 @@ print(w2.shape)
 
 
 nn = NeuronalNet(X, theta1, theta2, y)
-#nn = NeuronalNet(X, w1, w2, y)
+# nn = NeuronalNet(X, w1, w2, y)
 cost = 0.0
 
 for i in range(X.shape[0]):
