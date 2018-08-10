@@ -39,8 +39,8 @@ def plot_data_scatterplot(X, y, thetas=[], costs=None):
     
     contours = []
     for theta, _ in thetas:
-    	xmax=round(X.max()+1)
-    	xmin= round(X.min()-1)
+        xmax=round(X.max()+1)
+        xmin= round(X.min()-1)
         xs = numpy.linspace(xmin, xmax, 200)
         ys = numpy.linspace(xmin, xmax, 200)
         xsgrid, ysgrid = numpy.meshgrid(xs, ys)

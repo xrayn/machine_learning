@@ -208,7 +208,7 @@ def gradient_descent(X,Y,theta, lossfunc, rounds=1000, alpha=1, granularity=10, 
 			costs.append(cost)
 			thetas.append((theta, "round"+str(i)))
 			#plt.plot(i,costs[i-1], "r.")
-			print i, cost, cost_before, costdelta
+			print(i, cost, cost_before, costdelta)
 			#plt.plot(i,cost, "r.")
 	#thetas.append((theta, "round"+str(i)))
 	

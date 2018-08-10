@@ -63,6 +63,6 @@ def case_3():
 	#print thetas
 	plot_contour(X,Y, thetas, feature_mapping=feature_mapping, lamb=lamb)
 
-#case_1()
+case_1()
 case_2()
-#case_3()
+case_3()
