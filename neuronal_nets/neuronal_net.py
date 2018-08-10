@@ -221,6 +221,6 @@ print("Cost regularized[" + str(cost_regularized) + "]")
 #       ok=ok+1.0
 #   else:
 #       err=err+1.0
-#print( (ok/5000*100), (err/5000*100))
+# print( (ok/5000*100), (err/5000*100))
 
 exit()

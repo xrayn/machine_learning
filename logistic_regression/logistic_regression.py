@@ -8,7 +8,7 @@ from logistic_regression_lib import *
 
 
 def case_1():
-    #data_tmp = np.genfromtxt('/home/ar/Downloads/machine-learning-ex1/ex1/ex1datatest.txt', delimiter=',')
+    # data_tmp = np.genfromtxt('/home/ar/Downloads/machine-learning-ex1/ex1/ex1datatest.txt', delimiter=',')
     X, Y = load_data('./testdata/ex2data1.txt')
     one = np.ones((len(X), 1))
     # X_normalized=normalize(X)
@@ -18,9 +18,10 @@ def case_1():
     X_mapped = np.concatenate((one, X_normalized), axis=1)
     # X_mapped=feature_mapping(X[:,0],X[:,1])
     theta = np.zeros(((np.shape(X_mapped)[1])))
-    #theta=[0.0, 0.0, 0.0]
+    # theta=[0.0, 0.0, 0.0]
     gradient_theta, thetas, costs = gradient_descent(
-        X_mapped, Y, theta, logistic_loss, rounds=10000, alpha=0.001, granularity=10)
+        X_mapped, Y, theta, logistic_loss,
+        rounds=10000, alpha=0.001, granularity=10)
     optimal_theta, res = logistic_descent_optimal(X_mapped, Y, theta, lamb=0)
     print "Calculated theta:", gradient_theta
     print "Optimal theta   :", optimal_theta
@@ -31,14 +32,15 @@ def case_1():
 
 
 def case_2():
-    #data_tmp = np.genfromtxt('/home/ar/Downloads/machine-learning-ex1/ex1/ex1datatest.txt', delimiter=',')
+    # data_tmp = np.genfromtxt('/home/ar/Downloads/machine-learning-ex1/ex1/ex1datatest.txt', delimiter=',')
     X, Y = load_data('./testdata/ex2data2.txt')
 
     X_mapped = feature_mapping(X[:, 0], X[:, 1])
     lamb = 0
     theta = np.zeros(((np.shape(X_mapped)[1])))
     gradient_theta, thetas, costs = gradient_descent(
-        X_mapped, Y, theta, logistic_loss, rounds=1000, alpha=1, granularity=3, lamb=lamb)
+        X_mapped, Y, theta, logistic_loss,
+        rounds=1000, alpha=1, granularity=3, lamb=lamb)
     optimal_theta, res = logistic_descent_optimal(X_mapped, Y, theta, lamb=0)
     print "Calculated theta:", gradient_theta
     print "Optimal theta   :", optimal_theta
@@ -50,7 +52,7 @@ def case_2():
 
 
 def case_3():
-    #data_tmp = np.genfromtxt('/home/ar/Downloads/machine-learning-ex1/ex1/ex1datatest.txt', delimiter=',')
+    # data_tmp = np.genfromtxt('/home/ar/Downloads/machine-learning-ex1/ex1/ex1datatest.txt', delimiter=',')
     X, Y = load_data('./testdata/ex2data2.txt')
 
     X_mapped = feature_mapping(X[:, 0], X[:, 1])
