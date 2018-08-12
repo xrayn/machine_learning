@@ -1,7 +1,8 @@
 import scipy.io
 import numpy as np
 import sys
-
+import pprint
+import copy
 
 sys.path.append('../logistic_regression')
 from logistic_regression_lib import *
@@ -10,6 +11,9 @@ mat = scipy.io.loadmat('data/ex3data1.mat')
 
 X = mat["X"]
 y = mat["y"]
+
+
+# also check https://github.com/rohan-varma/neuralnets/blob/master/NeuralNetwork.py
 
 print(mat["X"].shape)
 print(X[0])
@@ -93,7 +97,7 @@ class NeuronalNet:
         res=[]
         for i in range(self.input_layer.shape[0]):
             forward_vector = self.input_layer[i]
-            index, value = nn.feed_forward(forward_vector)
+            index, value = self.feed_forward(forward_vector)
             y_t = np.zeros(10)
             # y_t[self.y-1]=1.0
             y_t[self.y[i] - 1] = 1.
@@ -165,29 +169,30 @@ def sigmoid_gradient(z):
 
 
 
-nn = NeuronalNet(X, theta1, theta2, y)
-#nn = NeuronalNet(X, w1, w2, y)
+#nn = NeuronalNet(X, theta1, theta2, y)
+nn = NeuronalNet(X, w1, w2, y)
+
+
 cost = 0.0
-nn.full_feed_forward()
+#nn.full_feed_forward()
 
-def backprop():
+DELTA_3=np.zeros(10)
+DELTA_2=np.zeros(25)
+m=X.shape[0]
+for i in range(m):
     # Step 1
-    forward_vector = X[0]
+    forward_vector = X[i]
     nn.feed_forward(forward_vector)
-
     y_t = np.zeros(10)
     y_t[y[0] - 1] = 1.
     # output_delta=(nn.output_layer - y_t)
     # print output_delta
-
     # # Step 2
     # # z^2 =(theta.dot)
     # hidden_delta=w2.T.dot(output_delta)*sigmoid_gradient(nn.hidden_layer)
     # hidden_delta=hidden_delta[1:]
     # print "hidden_delta", hidden_delta
-
     # we now have d^2 and d^3
-
     # calculate the gradient
     # 
     a_1 = forward_vector
@@ -195,19 +200,111 @@ def backprop():
     a_2 = sigmoid(z_2)
     z_3 = a_2.dot(w2.T[1:])
     a_3 = sigmoid(z_3)
-
-
+    # this is the error term for the computed output 
+    # in comparison to the 
+    # the expected output
     d_3=a_3-y_t
-    print "d3", d_3.shape, "w2", w2.shape, "z2", z_2.shape
-    d_2=w2.T*d_3
-    print d_2.shape
-    print d_2.T.shape
+    #print "d3", d_3.shape, "w2", w2.shape, "z2", z_2.shape
+    d_2=np.multiply(w2.T[1:].dot(d_3),sigmoid_gradient(z_2))
 
-    d_2=d_2.T*sigmoid_gradient(add_1s_hidden_layers(z_2))
+    print "a_2", a_2.shape, a_2, "a_2.T", a_2.T
+    print "d_3", d_3.shape, d_3
+
+    DELTA_3=DELTA_3+d_3*a_3.T
+    DELTA_2=DELTA_2+d_2*a_2.T
+
+## for loop ends here!
+lamb=1.0
+
+print "DELTA_2", DELTA_2
+print "w1",w1
+print "lamb", np.dot((lamb/m),w1)
+
+w1_sum=0
+w2_sum=0
+for i in range(w1.shape[0]):
+    for j in range(w1.shape[1]):
+        thetaR1 = w1[i][j]
+        w1_sum += thetaR1 * thetaR1
+for i in range(w2.shape[0]):
+    for j in range(w2.shape[1]):
+        thetaR2 = theta2[i][j]
+        w2_sum += thetaR2 * thetaR2
 
 
-    print a_2.shape
 
+DELTA_3=(1.0/m)*DELTA_3+(lamb/m)*w2_sum
+# this resets the bias value
+DELTA_3[0]=DELTA_3[0]-(lamb/m)*w2_sum
+
+DELTA_2=(1.0/m)*DELTA_2+(lamb/m)*w1_sum
+# this resets the bias value
+DELTA_2[0]=DELTA_2[0]-(lamb/m)*w1_sum
+print "thetha1",theta1.shape
+print "w1", w1.shape
+
+#print "w_1", w1
+#print DELTA_3
+#print DELTA_2
+
+print w1.shape
+print DELTA_2.shape
+print w2.shape
+print DELTA_3.shape
+
+exit()
+
+eps=0.00001
+deltas=[]
+for i in range(w1.shape[0]):
+    w1_tplus=copy.copy(w1)
+    w1_tplus[0][i]=w1[0][i]+eps
+    w1_tminus=copy.copy(w1)
+    w1_tminus[0][i]=w1[0][i]-eps
+    nn2 = NeuronalNet(X, w1_tplus, w2, y)
+    cost = 0.0
+    nn2.full_feed_forward()
+    nn2.logistic_cost_regularized(1)
+    Jplus=nn2.get_cost_regularized()
+    
+    nn3 = NeuronalNet(X, w1_tminus, w2, y)
+    nn3.full_feed_forward()
+    nn3.logistic_cost_regularized(1)
+    Jminus=nn3.get_cost_regularized()
+    J=(Jplus-Jminus)/(2*eps)
+    print "DELTA: ", DELTA_2[i], "J: ", J
+    deltas.append((DELTA_2[i], J))
+    # apparently there is not delta term d_1
+
+
+for i in range(w2.shape[0]):
+    w2_tplus=copy.copy(w2)
+    w2_tplus[0][i]=w2[0][i]+eps
+    print w2_tplus[0][i], w2[0][i], eps
+    w2_tminus=copy.copy(w2)
+    w2_tminus[0][i]=w2[0][i]-eps
+    print w2_tminus[0][i], w2[0][i], eps
+   
+    nn2 = NeuronalNet(X, w1, w2_tplus, y)
+    cost = 0.0
+    nn2.full_feed_forward()
+    
+    nn2.logistic_cost_regularized(1)
+    Jplus=nn2.get_cost_regularized()
+    
+    nn3 = NeuronalNet(X, w1, w2_tminus, y)
+    nn3.full_feed_forward()
+    nn3.logistic_cost_regularized(1)
+    Jminus=nn3.get_cost_regularized()
+    J=(Jplus-Jminus)/(2*eps)
+    print "DELTA: ", DELTA_3[i], "J: ", J
+    deltas.append((DELTA_3[i], J))
+
+print deltas
+for i in deltas:
+    print '{0:.15f}\n{1:.15f}'.format(i[0],i[1])
+    print ""
+exit()
 
 
 # for i in range(X.shape[0]):
