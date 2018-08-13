@@ -1,400 +1,287 @@
-import scipy.io
+import os
 import numpy as np
+import random
+import scipy.io
 import sys
-import pprint
-import copy
+import gzip
+import cPickle
+#from activations import sigmoid, sigmoid_prime
+#from collect import load_mnist
+
+# basic code from https://github.com/kdexd/digit-classifier
+
+mat = scipy.io.loadmat('data/ex3data1.mat')
+
+
 
 sys.path.append('../logistic_regression')
 from logistic_regression_lib import *
 
-mat = scipy.io.loadmat('data/ex3data1.mat')
+class NeuralNetwork(object):
 
-X = mat["X"]
-y = mat["y"]
+    def __init__(self, sizes=list(), learning_rate=1.0, mini_batch_size=16,
+                 epochs=10):
+        """Initialize a Neural Network model.
 
+        Parameters
+        ----------
+        sizes : list, optional
+            A list of integers specifying number of neurns in each layer. Not
+            required if a pretrained model is used.
 
-# also check https://github.com/rohan-varma/neuralnets/blob/master/NeuralNetwork.py
+        learning_rate : float, optional
+            Learning rate for gradient descent optimization. Defaults to 1.0
 
-matheta = scipy.io.loadmat('data/ex3weights.mat')
+        mini_batch_size : int, optional
+            Size of each mini batch of training examples as used by Stochastic
+            Gradient Descent. Denotes after how many examples the weights
+            and biases would be updated. Default size is 16.
 
-theta1 = matheta["Theta1"]
-theta2 = matheta["Theta2"]
-
-
-class NeuronalNet:
-    def __init__(self, x, w1, w2, y):
-        self.input_layer = x
-        self.output_layer = []
-        self.hidden_layer = None
-        self.y = y
-        self.w1 = w1
-        self.w2 = w2
-        self.m, self.n = self.input_layer.shape
-        self.cost = 0
-
-        # the network
-        #
-        #  input    w1        hidden
-        #   0 ----- w1_0 --- (hidden) --- w2_0 --- (output)
-        #   0 ----- w1_1 --- (hidden) --- w2_1 --- (output)
-        #   0 ----- w1_2 --- (hidden) --- w2_2 --- (output)
-
-        # self.hidden_layer=sigmoid(self.input_layer.T.dot(w1.T))
-        # self.hidden_layer=self.add_1s_hidden_layers(self.hidden_layer)
-        # self.output_layer=sigmoid(self.hidden_layer.T.dot(w1.T))
-    def derivate(self, x):
-        return x * (1 - x)
-
-    def logistic_cost(self, h_x, Y, w1, w2):
         """
-        Calculates the cost of the current values
+        # Input layer is layer 0, followed by hidden layers layer 1, 2, 3...
+        self.sizes = sizes
+        self.num_layers = len(sizes)
+
+        # First term corresponds to layer 0 (input layer). No weights enter the
+        # input layer and hence self.weights[0] is redundant.
+        self.weights = [np.array([0])] + [np.random.randn(y, x) for y, x in
+                                          zip(sizes[1:], sizes[:-1])]
+
+        # Input layer does not have any biases. self.biases[0] is redundant.
+        self.biases = [np.random.randn(y, 1) for y in sizes]
+
+        # Input layer has no weights, biases associated. Hence z = wx + b is not
+        # defined for input layer. self.zs[0] is redundant.
+        self._zs = [np.zeros(bias.shape) for bias in self.biases]
+
+        # Training examples can be treated as activations coming out of input
+        # layer. Hence self.activations[0] = (training_example).
+        self._activations = [np.zeros(bias.shape) for bias in self.biases]
+
+        self.mini_batch_size = mini_batch_size
+        self.epochs = epochs
+        self.eta = learning_rate
+
+    def fit(self, training_data, validation_data=None):
+        """Fit (train) the Neural Network on provided training data. Fitting is
+        carried out using Stochastic Gradient Descent Algorithm.
+
+        Parameters
+        ----------
+        training_data : list of tuple
+            A list of tuples of numpy arrays, ordered as (image, label).
+
+        validation_data : list of tuple, optional
+            Same as `training_data`, if provided, the network will display
+            validation accuracy after each epoch.
+
         """
-        m, n = self.input_layer.shape
-        h_x_sum = -np.dot(Y, np.log(h_x))
-        l2_term = (1/2.0) * (np.sum(np.square(w1[:, 1:])) + np.sum(np.square(w2[:, 1:])))
-        h_x_sum = h_x_sum + l2_term
-        #h_x_sum -= np.dot((np.ones(len(Y)) - Y), np.log(np.ones(len(Y)) - h_x))
+        for epoch in range(self.epochs):
+            random.shuffle(training_data)
+            mini_batches = [
+                training_data[k:k + self.mini_batch_size] for k in
+                range(0, len(training_data), self.mini_batch_size)]
+            for mini_batch in mini_batches:
+                nabla_b = [np.zeros(bias.shape) for bias in self.biases]
+                nabla_w = [np.zeros(weight.shape) for weight in self.weights]
+                for x, y in mini_batch:
+                    self._forward_prop(x)
+                    delta_nabla_b, delta_nabla_w = self._back_prop(x, y)
+                    nabla_b = [nb + dnb for nb, dnb in zip(nabla_b, delta_nabla_b)]
+                    nabla_w = [nw + dnw for nw, dnw in zip(nabla_w, delta_nabla_w)]
 
-        # regularized theta does not consider the thetha[0]
-        # thetaR = theta[1:]
-        # lambda_term=((lamb)/2.0*m)*thetaR.dot(thetaR)
-        # h_x_sum=h_x_sum+lambda_term
-        cost = (float(1.0) / (m)) * h_x_sum
-        self.cost += cost
-        return cost
-
-    def get_output(self):
-        return self.output_layer
-
-    def logistic_cost_regularized(self, lamb=1):
-
-        theta_1_sum = 0
-        theta_2_sum = 0
-        # this executes the sum for 25*400
-        for i in range(self.w1.shape[0]):
-            for j in range(self.w1.shape[1]):
-                thetaR1 = self.w1[i][j]
-                theta_1_sum += thetaR1 * thetaR1
-
-        for i in range(self.w2.shape[0]):
-            for j in range(self.w2.shape[1]):
-                thetaR2 = theta2[i][j]
-                theta_2_sum += thetaR2 * thetaR2
-
-        # this executes the sum for 10*25
-
-        lambda_term = ((lamb) / (2.0 * self.m)) * (theta_1_sum + theta_2_sum)
-        print((lamb) / (2.0 * self.m))
-        print((theta_1_sum + theta_2_sum))
-        print(lambda_term)
-        self.cost_regularized = lambda_term
-        return lambda_term
-
-    def full_feed_forward(self):
-        res=[]
-        for i in range(self.input_layer.shape[0]):
-            forward_vector = self.input_layer[i]
-            index, value = self.feed_forward(forward_vector)
-            y_t = np.zeros(10)
-            # y_t[self.y-1]=1.0
-            y_t[self.y[i] - 1] = 1.
+                self.weights = [
+                    w - (self.eta / self.mini_batch_size) * dw for w, dw in
+                    zip(self.weights, nabla_w)]
+                self.biases = [
+                    b - (self.eta / self.mini_batch_size) * db for b, db in
+                    zip(self.biases, nabla_b)]
+            
+            
+            if validation_data:
+                accuracy = self.validate(validation_data) / 100.0
+                print("Epoch {0}, accuracy {1} %.".format(epoch + 1, accuracy))
+            else:
+                print("Processed epoch {0}.".format(epoch))
         
-            m, n = self.input_layer.shape
-            self.logistic_cost(self.output_layer, y_t)
-            res.append((index, value))
-        return res
+    def validate(self, validation_data):
+        """Validate the Neural Network on provided validation data. It uses the
+        number of correctly predicted examples as validation accuracy metric.
 
-    def feed_forward(self, forward_vector):
-        #self.hidden_layer = sigmoid(forward_vector.dot(self.w1.T))
-        #self.hidden_layer = add_1s_hidden_layers(self.hidden_layer)
-        #self.output_layer = sigmoid(self.hidden_layer.T.dot(self.w2.T))
-        a_1 = forward_vector
-        #the input of the hidden layer is obtained by applying our weights to our inputs. We essentially take a linear combination of our inputs
-        z_2 = w1.dot(a_1.T)
-        #applies the tanh function to obtain the input mapped to a distrubution of values between -1 and 1
-        a_2 = sigmoid_gradient(z_2)
-        #add a bias unit to activation of the hidden layer.
-        a_2 = self.add_bias_unit(a_2, column=False)
-        
-        # compute input of output layer in exactly the same manner.
-        z_3 = w2.dot(a_2)
-        # the activation of our output layer is just the softmax function.
-        a_3 = sigmoid_gradient(z_3)
-        return a_1, a_2, a_3, z_2, z_3
+        Parameters
+        ----------
+        validation_data : list of tuple
 
-        # first transform y to a vector
-        #res = (np.argmax(self.output_layer), np.max(self.output_layer))
-        return a_1, a_2, a_3, z_2, z_3
-    
-    def train(self):
-        costs=[]
+        Returns
+        -------
+        int
+            Number of correctly predicted images.
 
-        mini = np.array_split(range(y.shape[0]), 100)
-        y_t=[]
-        for i in range(y.shape[0]):
-            y_tt = np.zeros(10)
-            # y_t[self.y-1]=1.0
-            y_tt[self.y[0] - 1] = 1.
-            y_t.append(y_tt)
-        grads_w1, grads_w2 = [], [] #
-        for part in mini:
-            a_1, a_2, a_3, z_2, z_3 = self.feed_forward(self.input_layer[part])
-            print part
-            cost=self.logistic_cost(a_3, y_t[part[0]:part[-1]+1], self.w1, self.w2)
-            costs.append(cost)
+        """
+        validation_results = [(self.predict(x) == y) for x, y in validation_data]
+        return sum(result for result in validation_results)
 
-            #backprop:
-            grad1, grad2 = self.backprop(a_1=a_1, a_2=a_2, a_3=a_3, z_2=z_2, z_3=z_3, y_t=y_t[part[0]:part[-1]+1], w1=self.w1, w2=self.w2)
+    def predict(self, x):
+        """Predict the label of a single test example (image).
 
+        Parameters
+        ----------
+        x : numpy.array
 
-        #print a_1, a_2, a_3, z_2, z_3
+        Returns
+        -------
+        int
+            Predicted label of example (image).
 
-    def backprop(self, a_1, a_2, a_3, z_2, z_3, y_t, w1, w2):
-        print a_3.shape, len(y_t)
-        sigma3 = a_3.T - y_t
-        #z_2 = self.add_bias_unit(z2, column=False)
-        print z_2
-        print add_1s_hidden_layers(z_2)
-        sigma2 = w2.T.dot(sigma3) * sigmoid_gradient(add_1s_hidden_layers(z_2))
-        sigma2 = sigma2[1:]
-        #get rid of the bias row
-        print sigma2
-        print a_2
-        #sigma2 = sigma2[1:, :]
-        grad1 = sigma2.dot(a_2)
-        grad2 = sigma3*a_3.T
-        # add the regularization term
-        print "grad1",grad1
-        print "grad2",grad2
-        grad1[1:]+= (w1[1:]*self.l2) # derivative of .5*l2*w1^2
-        grad2[1:]+= (w2[1:]*self.l2) # derivative of .5*l2*w2^2
-        return grad1, grad2
+        """
 
-    def add_bias_unit(self, X, column=True):
-        """Adds a bias unit to our inputs"""
-        if column:
-            bias_added = np.ones((X.shape[0], X.shape[1] + 1))
-            bias_added[:, 1:] = X
-        else:
-            bias_added = np.ones((X.shape[0] + 1, X.shape[1]))
-            bias_added[1:, :] = X
+        self._forward_prop(x)
+        return np.argmax(self._activations[-1])
 
-        return bias_added
-
-    def get_cost(self):
-        return self.cost
-
-    def get_cost_regularized(self):
-        return self.cost + self.cost_regularized
-
-    def add_1s(self, X):
-        m, n = X.shape
-        one = np.ones((m, 1))
-        # this simply adds 1's in front of the X
-        X = np.concatenate((one, X), axis=1)
-        return X
-
-    def add_1s_hidden_layers(layer):
-        return np.insert(layer, 0, 1., axis=0)
+    def _forward_prop(self, x):
+        self._activations[0] = x
+        for i in range(1, self.num_layers):
+            self._zs[i] = (
+                self.weights[i].dot(self._activations[i - 1]) + self.biases[i]
+            )
+            
+            
+            if i < range(1, self.num_layers):
+                self._activations[i] = sigmoid(self._zs[i])
+            else:
+                self._activations[i] = sigmoid(self._zs[i])
 
 
-def add_1s(X):
-    m, n = X.shape
-    one = np.ones((m, 1))
-    # this simply adds 1's in front of the X
-    X = np.concatenate((one, X), axis=1)
-    return X
+    def _back_prop(self, x, y):
+        nabla_b = [np.zeros(bias.shape) for bias in self.biases]
+        nabla_w = [np.zeros(weight.shape) for weight in self.weights]
 
+        error = (self._activations[-1] - y) * sigmoid_gradient(self._zs[-1])
+        nabla_b[-1] = error
+        nabla_w[-1] = error.dot(self._activations[-2].transpose())
 
-def add_1s_hidden_layers(layer):
-    return np.insert(layer, 0, 1., axis=0)
+        for l in range(self.num_layers - 2, 0, -1):
+            error = np.multiply(
+                self.weights[l + 1].transpose().dot(error),
+                sigmoid_gradient(self._zs[l])
+            )
+            nabla_b[l] = error
+            nabla_w[l] = error.dot(self._activations[l - 1].transpose())
 
+        return nabla_b, nabla_w
 
-# this simply adds 1's in front of the X
-#X = add_1s(X)
-print()
+    def load(self, filename='model.npz'):
+        """Prepare a neural network from a compressed binary containing weights
+        and biases arrays. Size of layers are derived from dimensions of
+        numpy arrays.
 
-epsilon_init = 0.12
+        Parameters
+        ----------
+        filename : str, optional
+            Name of the ``.npz`` compressed binary in models directory.
 
+        """
+        npz_members = np.load(os.path.join(os.curdir, 'models', filename))
 
+        self.weights = list(npz_members['weights'])
+        self.biases = list(npz_members['biases'])
 
-w1_neurons = 25
-w1 = np.random.rand(w1_neurons, X.shape[1]) * 2 * epsilon_init - epsilon_init
+        # Bias vectors of each layer has same length as the number of neurons
+        # in that layer. So we can build `sizes` through biases vectors.
+        self.sizes = [b.shape[0] for b in self.biases]
+        self.num_layers = len(self.sizes)
 
-w2_neurons = 10
+        # These are declared as per desired shape.
+        self._zs = [np.zeros(bias.shape) for bias in self.biases]
+        self._activations = [np.zeros(bias.shape) for bias in self.biases]
 
-w2 = np.random.rand(w2_neurons, w1.shape[0] + 1) * 2 * epsilon_init - epsilon_init
+        # Other hyperparameters are set as specified in model. These were cast
+        # to numpy arrays for saving in the compressed binary.
+        self.mini_batch_size = int(npz_members['mini_batch_size'])
+        self.epochs = int(npz_members['epochs'])
+        self.eta = float(npz_members['eta'])
+
+    def save(self, filename='model.npz'):
+        """Save weights, biases and hyperparameters of neural network to a
+        compressed binary. This ``.npz`` binary is saved in 'models' directory.
+
+        Parameters
+        ----------
+        filename : str, optional
+            Name of the ``.npz`` compressed binary in to be saved.
+
+        """
+        np.savez_compressed(
+            file=os.path.join(os.curdir, 'models', filename),
+            weights=self.weights,
+            biases=self.biases,
+            mini_batch_size=self.mini_batch_size,
+            epochs=self.epochs,
+            eta=self.eta
+        )
 
 def sigmoid_gradient(z):
     return sigmoid(z)*(1-sigmoid(z))
 
+def vectorized_result(y):
+    e = np.zeros((10, 1))
+    e[y] = 1.0
+    return e
 
 
-#nn = NeuronalNet(X, theta1, theta2, y)
-nn = NeuronalNet(X, w1, w2, y)
-nn.train()
-exit()
-cost = 0.0
-#nn.full_feed_forward()
+def load_mnist():
+    if not os.path.exists(os.path.join(os.curdir, 'data')):
+        os.mkdir(os.path.join(os.curdir, 'data'))
+        wget.download('http://deeplearning.net/data/mnist/mnist.pkl.gz', out='data')
 
-DELTA_3=np.zeros(10)
-DELTA_2=np.zeros(25)
-m=X.shape[0]
-for i in range(m):
-    # Step 1
-    forward_vector = X[i]
-    nn.feed_forward(forward_vector)
-    y_t = np.zeros(10)
-    y_t[y[0] - 1] = 1.
-    # output_delta=(nn.output_layer - y_t)
-    # print output_delta
-    # # Step 2
-    # # z^2 =(theta.dot)
-    # hidden_delta=w2.T.dot(output_delta)*sigmoid_gradient(nn.hidden_layer)
-    # hidden_delta=hidden_delta[1:]
-    # print "hidden_delta", hidden_delta
-    # we now have d^2 and d^3
-    # calculate the gradient
-    # 
-    a_1 = forward_vector
-    z_2 = a_1.dot(w1.T)
-    a_2 = sigmoid(z_2)
-    z_3 = a_2.dot(w2.T[1:])
-    a_3 = sigmoid(z_3)
-    # this is the error term for the computed output 
-    # in comparison to the 
-    # the expected output
-    d_3=a_3-y_t
-    #print "d3", d_3.shape, "w2", w2.shape, "z2", z_2.shape
-    d_2=np.multiply(w2.T[1:].dot(d_3),sigmoid_gradient(z_2))
+    data_file = gzip.open(os.path.join(os.curdir, 'data', 'mnist.pkl.gz'), 'rb')
+    training_data, validation_data, test_data = cPickle.load(data_file)
+    data_file.close()
 
-    print "a_2", a_2.shape, a_2, "a_2.T", a_2.T
-    print "d_3", d_3.shape, d_3
+    training_inputs = [np.reshape(x, (784, 1)) for x in training_data[0]]
+    training_results = [vectorized_result(y) for y in training_data[1]]
+    training_data = zip(training_inputs, training_results)
 
-    DELTA_3=DELTA_3+d_3*a_3.T
-    DELTA_2=DELTA_2+d_2*a_2.T
+    validation_inputs = [np.reshape(x, (784, 1)) for x in validation_data[0]]
+    validation_results = validation_data[1]
+    validation_data = zip(validation_inputs, validation_results)
 
-## for loop ends here!
-lamb=1.0
+    test_inputs = [np.reshape(x, (784, 1)) for x in test_data[0]]
+    test_data = zip(test_inputs, test_data[1])
+    return training_data, validation_data, test_data
 
-print "DELTA_2", DELTA_2
-print "w1",w1
-print "lamb", np.dot((lamb/m),w1)
+matheta = scipy.io.loadmat('data/ex3weights.mat')
 
-w1_sum=0
-w2_sum=0
-for i in range(w1.shape[0]):
-    for j in range(w1.shape[1]):
-        thetaR1 = w1[i][j]
-        w1_sum += thetaR1 * thetaR1
-for i in range(w2.shape[0]):
-    for j in range(w2.shape[1]):
-        thetaR2 = theta2[i][j]
-        w2_sum += thetaR2 * thetaR2
+X = mat["X"]
+y = mat["y"]
+labels=[]
+for i in range(len(y)):
+    zero=np.zeros((10,1))
+    zero[y[i]-1]=1.0
+    labels.append(zero)
 
 
 
-DELTA_3=(1.0/m)*DELTA_3+(lamb/m)*w2_sum
-# this resets the bias value
-DELTA_3[0]=DELTA_3[0]-(lamb/m)*w2_sum
+validation_results = y
 
-DELTA_2=(1.0/m)*DELTA_2+(lamb/m)*w1_sum
-# this resets the bias value
-DELTA_2[0]=DELTA_2[0]-(lamb/m)*w1_sum
-print "thetha1",theta1.shape
-print "w1", w1.shape
+training_inputs = [np.reshape(x, (400, 1)) for x in X]
 
-#print "w_1", w1
-#print DELTA_3
-#print DELTA_2
+validation_data=zip(training_inputs, y)
 
-print w1.shape
-print DELTA_2.shape
-print w2.shape
-print DELTA_3.shape
 
-exit()
 
-eps=0.00001
-deltas=[]
-for i in range(w1.shape[0]):
-    w1_tplus=copy.copy(w1)
-    w1_tplus[0][i]=w1[0][i]+eps
-    w1_tminus=copy.copy(w1)
-    w1_tminus[0][i]=w1[0][i]-eps
-    nn2 = NeuronalNet(X, w1_tplus, w2, y)
-    cost = 0.0
-    nn2.full_feed_forward()
-    nn2.logistic_cost_regularized(1)
-    Jplus=nn2.get_cost_regularized()
+training_data, validation_data, test_data = load_mnist()
+
+
+sizes=[784,25,10]
+nn=NeuralNetwork(sizes=sizes)
+nn.fit(training_data[:50000], validation_data)
+for i in range(len(training_data[:50])):
+    expected=validation_data[i][1]
+    predicted=nn.predict(validation_data[i][0])
     
-    nn3 = NeuronalNet(X, w1_tminus, w2, y)
-    nn3.full_feed_forward()
-    nn3.logistic_cost_regularized(1)
-    Jminus=nn3.get_cost_regularized()
-    J=(Jplus-Jminus)/(2*eps)
-    print "DELTA: ", DELTA_2[i], "J: ", J
-    deltas.append((DELTA_2[i], J))
-    # apparently there is not delta term d_1
-
-
-for i in range(w2.shape[0]):
-    w2_tplus=copy.copy(w2)
-    w2_tplus[0][i]=w2[0][i]+eps
-    print w2_tplus[0][i], w2[0][i], eps
-    w2_tminus=copy.copy(w2)
-    w2_tminus[0][i]=w2[0][i]-eps
-    print w2_tminus[0][i], w2[0][i], eps
-   
-    nn2 = NeuronalNet(X, w1, w2_tplus, y)
-    cost = 0.0
-    nn2.full_feed_forward()
-    
-    nn2.logistic_cost_regularized(1)
-    Jplus=nn2.get_cost_regularized()
-    
-    nn3 = NeuronalNet(X, w1, w2_tminus, y)
-    nn3.full_feed_forward()
-    nn3.logistic_cost_regularized(1)
-    Jminus=nn3.get_cost_regularized()
-    J=(Jplus-Jminus)/(2*eps)
-    print "DELTA: ", DELTA_3[i], "J: ", J
-    deltas.append((DELTA_3[i], J))
-
-print deltas
-for i in deltas:
-    print '{0:.15f}\n{1:.15f}'.format(i[0],i[1])
-    print ""
-exit()
-
-
-# for i in range(X.shape[0]):
-#     index, value = nn.feed_forward(i)
-
-#     if not y[i] - 1 == index:
-#         print(y[i] - 1, index, value, "ERROR")
-#     else:
-#         print(y[i] - 1, index, value, "OK")
-
-nn.logistic_cost_regularized(1)
-
-cost = nn.get_cost()
-print("Cost [" + str(cost) + "]")
-
-cost_regularized = nn.get_cost_regularized()
-print("Cost regularized[" + str(cost_regularized) + "]")
-
-
-# ok=0
-# err=0
-#
-# for j in range(X.shape[0]):
-#   idx, value = predict(X[j,:],theta1,theta2)
-#
-#   if (idx+1) == y[j]:
-#       ok=ok+1.0
-#   else:
-#       err=err+1.0
-# print( (ok/5000*100), (err/5000*100))
-
-exit()
+    if predicted != expected:
+        res="Error"
+    else:
+        res="Ok"
+    print "{} {} {}".format(predicted, expected, res)
