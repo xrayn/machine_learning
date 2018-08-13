@@ -15,10 +15,6 @@ y = mat["y"]
 
 # also check https://github.com/rohan-varma/neuralnets/blob/master/NeuralNetwork.py
 
-print(mat["X"].shape)
-print(X[0])
-print(mat["y"].shape)
-print(y[0])
 matheta = scipy.io.loadmat('data/ex3weights.mat')
 
 theta1 = matheta["Theta1"]
@@ -49,14 +45,15 @@ class NeuronalNet:
     def derivate(self, x):
         return x * (1 - x)
 
-    def logistic_cost(self, h_x, Y):
+    def logistic_cost(self, h_x, Y, w1, w2):
         """
         Calculates the cost of the current values
         """
         m, n = self.input_layer.shape
-
-        h_x_sum = np.dot(-Y, np.log(h_x)) - \
-            np.dot((1.0 - Y), np.log(1.0 - h_x))
+        h_x_sum = -np.dot(Y, np.log(h_x))
+        l2_term = (1/2.0) * (np.sum(np.square(w1[:, 1:])) + np.sum(np.square(w2[:, 1:])))
+        h_x_sum = h_x_sum + l2_term
+        #h_x_sum -= np.dot((np.ones(len(Y)) - Y), np.log(np.ones(len(Y)) - h_x))
 
         # regularized theta does not consider the thetha[0]
         # thetaR = theta[1:]
@@ -101,21 +98,88 @@ class NeuronalNet:
             y_t = np.zeros(10)
             # y_t[self.y-1]=1.0
             y_t[self.y[i] - 1] = 1.
-        # print(y_t)
+        
             m, n = self.input_layer.shape
             self.logistic_cost(self.output_layer, y_t)
             res.append((index, value))
         return res
 
     def feed_forward(self, forward_vector):
-        self.hidden_layer = sigmoid(forward_vector.dot(self.w1.T))
-        self.hidden_layer = add_1s_hidden_layers(self.hidden_layer)
-        self.output_layer = sigmoid(self.hidden_layer.T.dot(self.w2.T))
+        #self.hidden_layer = sigmoid(forward_vector.dot(self.w1.T))
+        #self.hidden_layer = add_1s_hidden_layers(self.hidden_layer)
+        #self.output_layer = sigmoid(self.hidden_layer.T.dot(self.w2.T))
+        a_1 = forward_vector
+        #the input of the hidden layer is obtained by applying our weights to our inputs. We essentially take a linear combination of our inputs
+        z_2 = w1.dot(a_1.T)
+        #applies the tanh function to obtain the input mapped to a distrubution of values between -1 and 1
+        a_2 = sigmoid_gradient(z_2)
+        #add a bias unit to activation of the hidden layer.
+        a_2 = self.add_bias_unit(a_2, column=False)
+        
+        # compute input of output layer in exactly the same manner.
+        z_3 = w2.dot(a_2)
+        # the activation of our output layer is just the softmax function.
+        a_3 = sigmoid_gradient(z_3)
+        return a_1, a_2, a_3, z_2, z_3
 
         # first transform y to a vector
-        res = (np.argmax(self.output_layer), np.max(self.output_layer))
+        #res = (np.argmax(self.output_layer), np.max(self.output_layer))
+        return a_1, a_2, a_3, z_2, z_3
+    
+    def train(self):
+        costs=[]
 
-        return res
+        mini = np.array_split(range(y.shape[0]), 100)
+        y_t=[]
+        for i in range(y.shape[0]):
+            y_tt = np.zeros(10)
+            # y_t[self.y-1]=1.0
+            y_tt[self.y[0] - 1] = 1.
+            y_t.append(y_tt)
+        grads_w1, grads_w2 = [], [] #
+        for part in mini:
+            a_1, a_2, a_3, z_2, z_3 = self.feed_forward(self.input_layer[part])
+            print part
+            cost=self.logistic_cost(a_3, y_t[part[0]:part[-1]+1], self.w1, self.w2)
+            costs.append(cost)
+
+            #backprop:
+            grad1, grad2 = self.backprop(a_1=a_1, a_2=a_2, a_3=a_3, z_2=z_2, z_3=z_3, y_t=y_t[part[0]:part[-1]+1], w1=self.w1, w2=self.w2)
+
+
+        #print a_1, a_2, a_3, z_2, z_3
+
+    def backprop(self, a_1, a_2, a_3, z_2, z_3, y_t, w1, w2):
+        print a_3.shape, len(y_t)
+        sigma3 = a_3.T - y_t
+        #z_2 = self.add_bias_unit(z2, column=False)
+        print z_2
+        print add_1s_hidden_layers(z_2)
+        sigma2 = w2.T.dot(sigma3) * sigmoid_gradient(add_1s_hidden_layers(z_2))
+        sigma2 = sigma2[1:]
+        #get rid of the bias row
+        print sigma2
+        print a_2
+        #sigma2 = sigma2[1:, :]
+        grad1 = sigma2.dot(a_2)
+        grad2 = sigma3*a_3.T
+        # add the regularization term
+        print "grad1",grad1
+        print "grad2",grad2
+        grad1[1:]+= (w1[1:]*self.l2) # derivative of .5*l2*w1^2
+        grad2[1:]+= (w2[1:]*self.l2) # derivative of .5*l2*w2^2
+        return grad1, grad2
+
+    def add_bias_unit(self, X, column=True):
+        """Adds a bias unit to our inputs"""
+        if column:
+            bias_added = np.ones((X.shape[0], X.shape[1] + 1))
+            bias_added[:, 1:] = X
+        else:
+            bias_added = np.ones((X.shape[0] + 1, X.shape[1]))
+            bias_added[1:, :] = X
+
+        return bias_added
 
     def get_cost(self):
         return self.cost
@@ -147,22 +211,19 @@ def add_1s_hidden_layers(layer):
 
 
 # this simply adds 1's in front of the X
-X = add_1s(X)
+#X = add_1s(X)
 print()
 
 epsilon_init = 0.12
 
 
-print(theta1.shape)
+
 w1_neurons = 25
 w1 = np.random.rand(w1_neurons, X.shape[1]) * 2 * epsilon_init - epsilon_init
-print(w1.shape)
+
 w2_neurons = 10
-print(theta2.shape)
+
 w2 = np.random.rand(w2_neurons, w1.shape[0] + 1) * 2 * epsilon_init - epsilon_init
-
-print("w2", w2)
-
 
 def sigmoid_gradient(z):
     return sigmoid(z)*(1-sigmoid(z))
@@ -171,8 +232,8 @@ def sigmoid_gradient(z):
 
 #nn = NeuronalNet(X, theta1, theta2, y)
 nn = NeuronalNet(X, w1, w2, y)
-
-
+nn.train()
+exit()
 cost = 0.0
 #nn.full_feed_forward()
 
